@@ -16,7 +16,7 @@
     <ProjectGuid>{c578d912-3beb-4ee1-8aa1-e9eacf7ca441}</ProjectGuid>
     <RootNamespace>testgame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>sandbox</ProjectName>
+    <ProjectName>LDJAM50</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -155,7 +155,7 @@
     <None Include="assets\kernels\vadd_kernel.cl" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="sandbox.rc" />
+    <ResourceCompile Include="LDJAM50.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="engine\resources\legion\icon.ico" />

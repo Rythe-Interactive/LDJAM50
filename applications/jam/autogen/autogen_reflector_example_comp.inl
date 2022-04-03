@@ -1,5 +1,5 @@
 #include "autogen_reflector_example_comp.hpp"
-#include "../../sandbox/systems/examplesystem.hpp"
+#include "../../jam/systems/examplesystem.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {

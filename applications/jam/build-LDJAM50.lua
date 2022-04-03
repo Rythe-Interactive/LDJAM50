@@ -1,4 +1,4 @@
---! Legion Sandbox Build Script for premake5
+--! Legion LDJAM50 Build Script for premake5
 --[[
 author: Glyn Leine
 copyright: (c) 2020 The Legion-Team
@@ -21,7 +21,7 @@ DEALINGS IN THE SOFTWARE.
 
 ]]--
 
-project "sandbox"
+project "LDJAM50"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++17"

@@ -88,7 +88,7 @@
     <None Include="assets\kernels\vadd_kernel.cl" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="sandbox.rc">
+    <ResourceCompile Include="LDJAM50.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
