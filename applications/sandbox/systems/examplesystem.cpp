@@ -131,6 +131,11 @@ void ExampleSystem::onSkyboxSwitch(switch_skybox_action& event)
 {
     using namespace legion;
     using namespace rendering;
+
+    ecs::filter<skybox_renderer> filter;
+    if (filter.empty())
+        return;
+
     if (event.released())
     {
         static size_type idx = 0;
@@ -167,7 +172,7 @@ void ExampleSystem::onSkyboxSwitch(switch_skybox_action& event)
         }
 
         idx = (idx + 1) % 4;
-        auto skyboxRenderer = ecs::world.get_component<skybox_renderer>();
+        auto skyboxRenderer = filter[0].get_component<skybox_renderer>();
         skyboxRenderer->material.set_param(SV_SKYBOX, textures[idx]);
 
         log::debug("Set skybox to {}", textures[idx].get_texture().name);
