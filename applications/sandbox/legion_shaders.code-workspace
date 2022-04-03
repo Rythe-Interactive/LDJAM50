@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "shaders",
+			"path": "assets\\shaders"
+		},
+		{
+			"name": "shaders",
+			"path": "engine\\shaders"
+		},
+		{
+			"name": "shaderlib",
+			"path": "engine\\shaderlib"
+		}
+	],
+	"settings": {
+		"files.autoSave": "off"
+	}
+}

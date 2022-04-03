@@ -1,0 +1,29 @@
+#version 450
+#state CULL OFF
+#state DEPTH OFF
+#state DEPTH_WRITE OFF
+
+generate(vertex, fragment)
+
+#include <stdio.shinc>
+#include <math_ext.shinc>
+
+shader(vertex)
+{
+    void main(void)
+    {
+        gl_Position = ProjectionMatrix * ViewMatrix * vec4(GetCamera().position + position, 1.0);
+        PropagateStdIO();
+    }
+}
+
+shader(fragment)
+{
+    #include <lighting_input.shinc>
+    void main(void)
+    {
+        vec3 unitDir = normalize(stdin(position));
+
+        fragment_color = pow(SampleSkyboxLod(unitDir, 0), vec4(vec3(2.2), 1.0));
+    }
+}
