@@ -1,5 +1,3 @@
-#include <chrono>
-
 #include "../systems/gamesystem.hpp"
 #include "../components/components.hpp"
 #include "../defaults/defaultpolicies.hpp"
@@ -103,7 +101,7 @@ void GameSystem::setup()
         scal = scale(.3f);
         pos = math::ballRand(10.f);
         enemy.add_component<enemy_comp>();
-        auto rb = enemy.add_component<physics::rigidbody>();
+        auto rb = enemy.add_component<rigidbody>();
         enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         rb->linearDrag = 1.1f;
         rb->setMass(.8f);

@@ -143,7 +143,10 @@ void PhysicsSystem::integrateRigidbodies(float deltaTime)
         {
             ////-------------------- update velocity ------------------//
             auto mult = 1.f - rb.linearDrag * deltaTime;
-            if (mult < 0.0f) mult = 0.0f;
+
+            if (mult < 0.0f)
+                mult = 0.0f;
+
             math::vec3 acc = rb.forceAccumulator * rb.inverseMass;
             rb.velocity += acc * deltaTime;
             rb.velocity *= mult;

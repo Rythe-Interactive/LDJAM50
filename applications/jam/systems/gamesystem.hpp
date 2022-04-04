@@ -1,11 +1,6 @@
 #pragma once
-#include <core/core.hpp>
-#include <application/application.hpp>
-#include <rendering/rendering.hpp>
-#include <rendering/debugrendering.hpp>
-#include <audio/audio.hpp>
+#include "../engine_include.hpp"
 
-#include "../autogen/autogen.hpp"
 #include "../renderstages/mousehover.hpp"
 #include "gui_test.hpp"
 

@@ -20,7 +20,7 @@ void EnemySystem::locomotion(float deltaTime)
     {
         auto& enemy = ent.get_component<enemy_comp>().get();
         auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<physics::rigidbody>().get();
+        auto& rb = ent.get_component<rigidbody>().get();
         auto& rot = ent.get_component<rotation>().get();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
@@ -68,7 +68,7 @@ void EnemySystem::alignment()
     {
         auto& enemy = ent.get_component<enemy_comp>().get();
         auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<physics::rigidbody>().get();
+        auto& rb = ent.get_component<rigidbody>().get();
         auto rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
@@ -80,7 +80,7 @@ void EnemySystem::alignment()
 
         velocity force{ 0.f };
         for (size_type neighbor = 0; neighbor < neighborCount; neighbor++)
-            force += ecs::Registry::getEntity(enemy.neighbors[neighbor]).get_component<physics::rigidbody>()->velocity;
+            force += ecs::Registry::getEntity(enemy.neighbors[neighbor]).get_component<rigidbody>()->velocity;
 
         steering += force / neighborCount;
         steering -= vel;
@@ -93,7 +93,7 @@ void EnemySystem::cohesion()
     {
         auto& enemy = ent.get_component<enemy_comp>().get();
         auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<physics::rigidbody>().get();
+        auto& rb = ent.get_component<rigidbody>().get();
         auto rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
@@ -118,7 +118,7 @@ void EnemySystem::seperation()
     {
         auto& enemy = ent.get_component<enemy_comp>().get();
         auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<physics::rigidbody>().get();
+        auto& rb = ent.get_component<rigidbody>().get();
         auto rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
