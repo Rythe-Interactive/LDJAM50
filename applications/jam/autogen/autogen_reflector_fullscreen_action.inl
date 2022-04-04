@@ -1,5 +1,5 @@
 #include "autogen_reflector_fullscreen_action.hpp"
-#include "../../jam/systems/simplecameracontroller.hpp"
+#include "../../jam/systems/gamesystem.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {

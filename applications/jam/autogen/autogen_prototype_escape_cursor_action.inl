@@ -1,5 +1,5 @@
 #include "autogen_prototype_escape_cursor_action.hpp"
-#include "../../jam/systems/simplecameracontroller.hpp"
+#include "../../jam/systems/gamesystem.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {

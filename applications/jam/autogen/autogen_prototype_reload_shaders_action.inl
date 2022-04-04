@@ -1,5 +1,5 @@
 #include "autogen_prototype_reload_shaders_action.hpp"
-#include "../../jam/systems/examplesystem.hpp"
+#include "../../jam/systems/gamesystem.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {
