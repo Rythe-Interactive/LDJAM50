@@ -18,5 +18,8 @@ void BulletSystem::update(lgn::time::span deltaTime)
             ent.destroy();
             continue;
         }
+
+        auto& scal = ent.get_component<scale>().get();
+        scal = scal * (1.f - (bullet.age / bullet.lifetime));
     }
 }

@@ -147,10 +147,16 @@ void EnemySystem::hunt()
         for (auto& enemy : enemies)
         {
             auto diff = player.get_component<position>().get() - enemy.get_component<position>().get();
-            if (math::length(diff) < enemy.get_component<enemy_comp>()->visionRadius)
+            auto enemy_c = enemy.get_component<enemy_comp>();
+            auto seperationRadius = enemy_c->playerSeperationRadius;
+            auto huntRadius = enemy_c->playerHuntRadius;
+            if (math::length(diff) < huntRadius)
             {
-                enemy.get_component<enemy_comp>()->direction += diff;
+                enemy_c->direction += diff;
             }
+
+            if (math::length(diff) < seperationRadius)
+                enemy_c->direction += seperationRadius / -diff;
         }
     }
 }

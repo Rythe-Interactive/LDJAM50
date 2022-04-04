@@ -60,6 +60,9 @@ void GameSystem::setup()
     srl::SerializerRegistry::registerSerializer<material_data>();
     srl::SerializerRegistry::registerSerializer<mesh_filter>();
 
+    material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
+    material.set_param("color", math::colors::magenta);
+    material.set_param("intensity", 30.f);
     //srl::load<srl::bson, ecs::entity>(fs::view("assets://scenes/scene1.bson"), "scene");
     auto player = createEntity("Player");
     auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
@@ -81,8 +84,8 @@ void GameSystem::setup()
     player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
     auto [pos, rot, scal] = player.add_component<transform>();
     player.add_component<player_comp>();
-    auto rb = player.add_component<rigidbody>();
-    rb->linearDrag = 1.1f;
+    auto rb = player.add_component<physics::rigidbody>();
+    rb->linearDrag = .8f;
     rb->setMass(.1f);
 
     auto camera_ent = createEntity("Camera");
@@ -93,13 +96,13 @@ void GameSystem::setup()
     camera_ent.add_component<gfx::camera>(cam);
     player.add_child(camera_ent);
 
-    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamStealth.glb"));
+    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
     for (size_type i = 0; i < 200; i++)
     {
         auto enemy = createEntity();
         auto [pos, rot, scal] = enemy.add_component<transform>();
         scal = scale(.3f);
-        pos = math::ballRand(10.f);
+        pos = math::ballRand(20.f);
         enemy.add_component<enemy_comp>();
         auto rb = enemy.add_component<rigidbody>();
         enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
@@ -140,10 +143,10 @@ void GameSystem::pitch(player_pitch& axis)
 
         angle += axis.value * axis.input_delta * radialMovement;
 
-        if (angle > -0.001f)
-            angle = -0.001f;
-        if (angle < -(math::pi<float>() - 0.001f))
-            angle = -(math::pi<float>() - 0.001f);
+        //if (angle > -0.001f)
+        //    angle = -0.001f;
+        //if (angle < -(math::pi<float>() - 0.001f))
+        //    angle = -(math::pi<float>() - 0.001f);
 
         up = math::mat3(math::axisAngleMatrix(right, angle)) * fwd;
         fwd = math::cross(right, up);
@@ -222,15 +225,16 @@ void GameSystem::shoot(player_shoot& action)
         {
             auto bullet = createEntity();
 
-            bullet.add_component<gfx::light>(gfx::light::point(math::colors::white, 5.f, 16.f));
+            bullet.add_component<gfx::light>(gfx::light::point(math::colors::magenta, 30.f, 15.f));
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
             auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
             b_pos = e_pos.xyz() + e_rot.forward() * 2.f;
-            b_scal = scale(.1f);
+            b_scal = scale(.3f);
 
             auto model = gfx::ModelCache::get_handle("Bullet");
-            auto material = gfx::MaterialCache::get_material("ShipLit");
+            auto material = gfx::MaterialCache::get_material("Light");
+
             //material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
             bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
 
@@ -239,7 +243,8 @@ void GameSystem::shoot(player_shoot& action)
             auto p_vel = ent.get_component<rigidbody>()->velocity;
             auto& b_rb = bullet.add_component<rigidbody>().get();
             b_rb.velocity = p_vel;
-            b_rb.addForce(shootDir * 1500.f);
+            b_rb.addForce(shootDir * 1000.f);
+            b_rb.setMass(.1f);
         }
     }
 }
