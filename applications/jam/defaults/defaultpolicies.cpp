@@ -1,7 +1,4 @@
 #include "defaultpolicies.hpp"
-#include <core/particles/particleemitter.hpp>
-#include <core/particles/particlesystem.hpp>
-#include <rendering/debugrendering.hpp>
 
 namespace legion::core
 {

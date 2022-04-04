@@ -322,4 +322,9 @@ namespace legion::core::ecs
         return getFamily(typeId)->get_component(target);
     }
 
+    reflector Registry::getComponentReflector(id_type typeId, entity target)
+    {
+        return getFamily(typeId)->get_component_reflector(target);
+    }
+
 }

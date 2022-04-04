@@ -1,17 +1,8 @@
 #pragma once
-#include <core/core.hpp>
-#include <application/application.hpp>
-#include <rendering/rendering.hpp>
-#include <rendering/debugrendering.hpp>
-#include <audio/audio.hpp>
+#include "../engine_include.hpp"
+
 #include "../renderstages/mousehover.hpp"
 #include "gui_test.hpp"
-#include "../autogen/autogen.hpp"
-
-struct [[reflectable]] example_comp
-{
-    int value = 1;
-};
 
 struct tonemap_action : public lgn::app::input_action<tonemap_action> {};
 struct switch_skybox_action : public lgn::app::input_action<switch_skybox_action> {};

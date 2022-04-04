@@ -190,6 +190,9 @@ namespace legion::core::ecs
         L_NODISCARD std::unordered_set<id_type>& component_composition();
         L_NODISCARD const std::unordered_set<id_type>& component_composition() const;
 
+        entity copy(entity parent);
+        entity copy();
+
         /**@brief Replaces current parent with a new one.
          */
         void set_parent(id_type parent);

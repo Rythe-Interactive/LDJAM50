@@ -24,16 +24,13 @@
     <ClCompile Include="systems\examplesystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="autogen\autogen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="renderstages\mousehover.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile> 
+    </ClCompile>
     <ClCompile Include="defaults\defaultpolicies.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="systems\physics_test_system.cpp">
+    <ClCompile Include="autogen\autogen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,9 +65,6 @@
     <ClInclude Include="systems\CustomSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="systems\mysystem.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="autogen\autogen.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -80,7 +74,7 @@
     <ClInclude Include="renderstages\mousehover.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="systems\physics_test_system.hpp">
+    <ClInclude Include="engine_include.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

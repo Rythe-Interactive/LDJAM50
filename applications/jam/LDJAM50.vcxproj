@@ -129,13 +129,13 @@
     <ClCompile Include="source.cpp" />
     <ClCompile Include="systems\examplesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
-    <ClCompile Include="systems\physics_test_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autogen\autogen.hpp" />
     <ClInclude Include="data\pp_bloom.hpp" />
     <ClInclude Include="data\pp_edgedetect.hpp" />
     <ClInclude Include="defaults\defaultpolicies.hpp" />
+    <ClInclude Include="engine_include.hpp" />
     <ClInclude Include="module\examplemodule.hpp" />
     <ClInclude Include="renderstages\mousehover.hpp" />
     <ClInclude Include="resource.h" />
@@ -145,8 +145,6 @@
     </ClInclude>
     <ClInclude Include="systems\examplesystem.hpp" />
     <ClInclude Include="systems\gui_test.hpp" />
-    <ClInclude Include="systems\mysystem.hpp" />
-    <ClInclude Include="systems\physics_test_system.hpp" />
     <ClInclude Include="systems\pointcloud_particlesystem.hpp" />
     <ClInclude Include="data\pp_blur.hpp" />
     <ClInclude Include="systems\simplecameracontroller.hpp" />

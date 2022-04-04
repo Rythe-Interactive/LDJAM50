@@ -1,7 +1,6 @@
 #pragma once
-#include <core/core.hpp>
+#include "../engine_include.hpp"
 
-#include "../systems/mysystem.hpp"
 #include "../systems/examplesystem.hpp"
 #include "../systems/simplecameracontroller.hpp"
 #include "../systems/gui_test.hpp"
@@ -22,7 +21,6 @@ public:
             0
         );
 
-        //reportSystem<MySystem>();
         reportSystem<SimpleCameraController>();
         reportSystem<ExampleSystem>();
         reportSystem<GuiTestSystem>();

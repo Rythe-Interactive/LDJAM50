@@ -1,10 +1,7 @@
-#include <chrono>
-
 #include "../systems/examplesystem.hpp"
 #include "../defaults/defaultpolicies.hpp"
 #include <rendering/data/particlepolicies/renderpolicy.hpp>
 #include <rendering/data/particlepolicies/flipbookpolicy.hpp>
-
 
 void ExampleSystem::setup()
 {
@@ -23,7 +20,6 @@ void ExampleSystem::setup()
     bindToEvent<events::exit, &ExampleSystem::onExit>();
 
     //Serialization Test
-    srl::SerializerRegistry::registerSerializer<example_comp>();
     srl::SerializerRegistry::registerSerializer<ecs::entity>();
     srl::SerializerRegistry::registerSerializer<position>();
     srl::SerializerRegistry::registerSerializer<rotation>();
@@ -304,63 +300,6 @@ void ExampleSystem::update(legion::time::span deltaTime)
     {
         timer.start();
         firstFrame = false;
-    }
-
-    {
-        ecs::filter<rotation, example_comp> filter;
-        for (auto& ent : filter)
-        {
-            ent.get_component<rotation>().get() *= math::angleAxis(math::two_pi<float>() * 0.1f * deltaTime, math::vec3::up);
-        }
-    }
-
-    ecs::filter<position, velocity, example_comp> filter;
-
-    float dt = deltaTime;
-    if (dt > 0.07f)
-        return;
-
-    if (filter.size())
-    {
-        auto poolSize = (schd::Scheduler::jobPoolSize() + 1);
-        size_type jobSize = math::iround(math::ceil(filter.size() / static_cast<float>(poolSize)));
-
-        queueJobs(poolSize, [&](id_type jobId)
-            {
-                auto start = jobId * jobSize;
-                auto end = start + jobSize;
-                if (end > filter.size())
-                    end = filter.size();
-
-                for (size_type i = start; i < end; i++)
-                {
-                    auto& pos = filter[i].get_component<position>().get();
-                    auto& vel = filter[i].get_component<velocity>().get();
-
-                    if (vel == math::vec3::zero)
-                        vel = math::normalize(pos);
-
-                    math::vec3 perp;
-
-                    perp = math::normalize(math::cross(vel, math::vec3::up));
-
-                    math::vec3 rotated = (math::axisAngleMatrix(vel, math::perlin(pos) * math::pi<float>()) * math::vec4(perp.x, perp.y, perp.z, 0)).xyz();
-                    rotated.y -= 0.5f;
-                    rotated = math::normalize(rotated);
-
-                    vel = math::normalize(vel + rotated * dt);
-
-                    if (math::abs(vel.y) >= 0.9f)
-                    {
-                        auto rand = math::circularRand(1.f);
-                        vel.y = 0.9f;
-                        vel = math::normalize(vel + math::vec3(rand.x, 0.f, rand.y));
-                    }
-
-                    pos += vel * 0.3f * dt;
-                }
-            }
-        ).wait();
     }
 
     time64 delta = schd::Clock::lastTickDuration();

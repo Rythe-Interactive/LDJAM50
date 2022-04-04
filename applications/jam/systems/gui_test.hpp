@@ -1,12 +1,9 @@
 #pragma once
+#include "../engine_include.hpp"
 
 #include <rendering/util/gui.hpp>
-#include <imgui/imgui_internal.h>
-
-#include <core/core.hpp>
-#include <rendering/rendering.hpp>
 #include <rendering/pipeline/gui/stages/imguirenderstage.hpp>
-#include <rendering/systems/renderer.hpp>
+#include <imgui/imgui_internal.h>
 
 #include "../renderstages/mousehover.hpp"
 
@@ -49,7 +46,7 @@ namespace legion
 
         void onClick(click_action& event)
         {
-            if (event.released())
+            if (event.pressed())
                 clicked = true;
         }
 
@@ -703,6 +700,277 @@ namespace legion
             return false;
         }
 
+        void DisplayMeshFilterEditor(ecs::entity target)
+        {
+            mesh_filter& meshFilter = target.get_component<mesh_filter>();
+
+            int currentModelIdx;
+
+            auto models = assets::AssetCache<mesh>::getAll();
+
+            std::vector<cstring> modelNames;
+            modelNames.reserve(models.size());
+            for (size_type i = 0; i < models.size(); i++)
+            {
+                modelNames.push_back(models[i].name().c_str());
+                if (models[i] == meshFilter.shared_mesh)
+                    currentModelIdx = i;
+            }
+
+            ImGui::LabelText("##meshfilter", "Mesh filter");
+
+            ImGui::Indent();
+
+            ImGui::Text("Model:");
+
+            ImGui::SameLine();
+            if (ImGui::Combo("##model", &currentModelIdx, modelNames.data(), modelNames.size()))
+            {
+                meshFilter.shared_mesh = models[currentModelIdx];
+            }
+            ImGui::Unindent();
+        }
+
+        void DisplayMeshRendererEditor(ecs::entity target)
+        {
+            mesh_renderer& renderer = target.get_component<mesh_renderer>();
+            int currentMaterialIdx;
+
+            auto [lock, rawMaterials] = MaterialCache::get_all_materials();
+            std::vector<material_handle> materials;
+
+            {
+                async::readonly_guard guard(lock);
+                materials.reserve(rawMaterials.size());
+                for (auto& [id, mat] : rawMaterials)
+                    materials.push_back(material_handle{ id });
+            }
+
+            std::vector<cstring> materialNames;
+
+            materialNames.reserve(materials.size());
+            for (size_type i = 0; i < materials.size(); i++)
+            {
+                materialNames.push_back(materials[i].get_name().c_str());
+                if (materials[i] == renderer.material)
+                    currentMaterialIdx = i;
+            }
+
+            ImGui::LabelText("##meshrenderer", "Mesh renderer");
+
+            ImGui::Indent();
+
+            ImGui::Text("Material:");
+            ImGui::SameLine();
+            if (ImGui::Combo("##material", &currentMaterialIdx, materialNames.data(), materialNames.size()))
+            {
+                renderer.material = materials[currentMaterialIdx];
+            }
+
+            ImGui::Indent();
+
+            auto variants = renderer.material.get_variants();
+
+            int currentVariantIdx;
+
+            auto currentVariant = renderer.material.current_variant();
+            if (currentVariant == 0)
+                currentVariant = nameHash("default");
+
+            std::vector<cstring> variantNames;
+            variantNames.reserve(variants.size());
+            for (size_type i = 0; i < variants.size(); i++)
+            {
+                variantNames.push_back(variants[i].get().name.c_str());
+                if (nameHash(variants[i].get().name) == currentVariant)
+                    currentVariantIdx = i;
+            }
+
+            ImGui::Text("Variant:");
+            ImGui::SameLine();
+            if (ImGui::Combo("##variant", &currentVariantIdx, variantNames.data(), variantNames.size()))
+            {
+                renderer.material.set_variant(variantNames[currentVariantIdx]);
+            }
+
+            for (auto& [id, paramPtr] : variants[currentVariantIdx].get().parameters)
+            {
+                DisplayParamEditor(renderer.material, paramPtr->get_name(), paramPtr->type());
+            }
+
+            ImGui::Unindent();
+            ImGui::Unindent();
+        }
+
+        void DisplayPrimitive(std::string_view name, primitive_reference& primitive)
+        {
+            if (primitive.typeId == typeHash<int>())
+            {
+                ImGui::InputInt(name.data(), primitive.cast<int>());
+            }
+            else if (primitive.typeId == typeHash<float>())
+            {
+                ImGui::InputFloat(name.data(), primitive.cast<float>());
+            }
+            else if (primitive.typeId == typeHash<bool>())
+            {
+                ImGui::Checkbox(name.data(), primitive.cast<bool>());
+            }
+            else if (primitive.typeId == typeHash<std::string>())
+            {
+                std::array<char, 512> buffer;
+                buffer.fill('\0');
+                if (ImGui::InputText(name.data(), buffer.data(), buffer.size()))
+                {
+                    primitive.cast<std::string>()->assign(buffer.data());
+                }
+            }
+            else
+            {
+                std::string labelId = "##" + std::string(name);
+                ImGui::LabelText(labelId.c_str(), "Unsupported primitive type");
+            }
+        }
+
+        void DisplayGenericObjectEditor(std::string_view name, reflector object, size_type level = 0)
+        {
+            std::vector<char> labelPrefix;
+
+            labelPrefix.insert(labelPrefix.begin(), level, '#');
+            labelPrefix.push_back('#');
+            labelPrefix.push_back('#');
+
+            std::string labelId = labelPrefix.data() + std::string(name);
+            ImGui::LabelText(labelId.c_str(), name.data());
+            ImGui::Indent();
+
+            for (auto& [memberName, member] : object.members)
+            {
+                ImGui::PushID(memberName.data());
+                if (member.is_object)
+                {
+                    DisplayGenericObjectEditor(memberName, member.object, level+1);
+                }
+                else
+                {
+                    DisplayPrimitive(memberName, member.primitive);
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::Unindent();
+        }
+
+        bool DisplayGenericComponentEditor(ecs::entity target, id_type componentId)
+        {
+            static id_type prehandledComponentIds[] = {
+                    typeHash<position>(), typeHash<rotation>(), typeHash<scale>(), typeHash<mesh_filter>(), typeHash<mesh_renderer>()
+            };
+
+            for (auto prehandled : prehandledComponentIds)
+                if (prehandled == componentId)
+                    return false;
+
+            auto refl = ecs::Registry::getComponentReflector(componentId, target);
+
+            ImGui::PushID(componentId);
+
+            std::string labelId = "##" + std::string(refl.typeName);
+            ImGui::LabelText(labelId.c_str(), refl.typeName.data());
+            ImGui::SameLine();
+            if (ImGui::Button("Remove"))
+            {
+                ecs::Registry::destroyComponent(componentId, target);
+                ImGui::PopID();
+                return true;
+            }
+
+            ImGui::Indent();
+
+            for (auto& [name, member] : refl.members)
+            {
+                ImGui::PushID(name.data());
+                if (member.is_object)
+                {
+                    DisplayGenericObjectEditor(name, member.object);
+                }
+                else
+                {
+                    DisplayPrimitive(name, member.primitive);
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::Unindent();
+            ImGui::PopID();
+
+            return false;
+        }
+
+        void DisplayEntityEditor(ecs::entity target)
+        {
+            using namespace imgui;
+            static bool showGizmo = true;
+
+            if (target.has_component<position>() && target.has_component<rotation>() && target.has_component<scale>())
+            {
+
+                ImGui::LabelText("##transform", "Transform");
+
+                ImGui::Indent();
+
+                if (base::RadioButton("Show Gizmo", showGizmo))
+                    showGizmo = !showGizmo;
+
+                if (showGizmo)
+                {
+                    position& pos = target.get_component<position>();
+                    rotation& rot = target.get_component<rotation>();
+                    scale& scal = target.get_component<scale>();
+                    model = compose(scal, rot, pos);
+                    gizmo::EditTransform(value_ptr(view), value_ptr(projection), value_ptr(model), true);
+                    decompose(model, scal, rot, pos);
+                }
+
+                ImGui::Unindent();
+            }
+            else if (ImGui::Button("Add Transform"))
+            {
+                target.add_component<transform>();
+            }
+
+            for (auto componentId : target.component_composition())
+            {
+                if (DisplayGenericComponentEditor(target, componentId))
+                    return;
+            }
+
+            if (ImGui::BeginMenu("Add component"))
+            {
+                auto& families = ecs::Registry::getFamilies();
+                for (auto& [componentId, family] : families)
+                {
+                    if (!family->contains(target))
+                    {
+                        if (ImGui::MenuItem(ecs::Registry::getFamilyName(componentId).c_str()))
+                        {
+                            ecs::Registry::createComponent(componentId, target);
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            if (target.has_component<mesh_filter>())
+            {
+                DisplayMeshFilterEditor(target);
+            }
+
+            if (target.has_component<mesh_renderer>())
+            {
+                DisplayMeshRendererEditor(target);
+            }
+        }
+
         void onGUI(L_MAYBEUNUSED app::window& context, camera& cam, const camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime)
         {
             //if (!SceneManager::currentScene)
@@ -740,14 +1008,14 @@ namespace legion
 
             if (selected)
             {
-                windowName += "  (selected:";
+                windowName += "  (Selected:";
 
                 if (selected->name.empty())
                 {
                     if (selected == ecs::world)
                         selected->name = "World";
                     else if (selected.has_component<camera>())
-                        selected->name = "camera";
+                        selected->name = "Camera";
                     else
                         selected->name = "Entity " + std::to_string(selected->id);
                 }
@@ -765,133 +1033,16 @@ namespace legion
             }
             base::End();
 
-            static bool showGizmo = true;
-
             gizmo::BeginFrame();
 
-            base::Begin("Edit Entity");
+            base::Begin("Edit entity");
             if (selected)
             {
-                if (selected.has_component<camera>())
-                {
-                    ImGui::Text("Changing camera transform not allowed.");
-                }
-                else if (selected.has_component<position>() && selected.has_component<rotation>() && selected.has_component<scale>())
-                {
-                    if (base::RadioButton("Show Gizmo", showGizmo))
-                        showGizmo = !showGizmo;
-
-                    if (showGizmo)
-                    {
-                        position& pos = selected.get_component<position>();
-                        rotation& rot = selected.get_component<rotation>();
-                        scale& scal = selected.get_component<scale>();
-                        model = compose(scal, rot, pos);
-                        gizmo::EditTransform(value_ptr(view), value_ptr(projection), value_ptr(model), true);
-                        decompose(model, scal, rot, pos);
-                    }
-                }
-                else if (ImGui::Button("Add Transform"))
-                {
-                    selected.add_component<transform>();
-                }
-
-                if (selected.has_component<mesh_renderable>())
-                {
-                    mesh_renderer& renderer = selected.get_component<mesh_renderer>();
-                    mesh_filter& meshFilter = selected.get_component<mesh_filter>();
-
-                    int currentModelIdx;
-
-                    auto models = assets::AssetCache<mesh>::getAll();
-
-                    std::vector<cstring> modelNames;
-                    modelNames.reserve(models.size());
-                    for (size_type i = 0; i < models.size(); i++)
-                    {
-                        modelNames.push_back(models[i].name().c_str());
-                        if (models[i] == meshFilter.shared_mesh)
-                            currentModelIdx = i;
-                    }
-
-                    ImGui::Text("Model:");
-
-                    ImGui::SameLine();
-                    if (ImGui::Combo("##model", &currentModelIdx, modelNames.data(), modelNames.size()))
-                    {
-                        meshFilter.shared_mesh = models[currentModelIdx];
-                    }
-
-                    int currentMaterialIdx;
-
-                    auto [lock, rawMaterials] = MaterialCache::get_all_materials();
-                    std::vector<material_handle> materials;
-
-                    {
-                        async::readonly_guard guard(lock);
-                        materials.reserve(rawMaterials.size());
-                        for (auto& [id, mat] : rawMaterials)
-                            materials.push_back(material_handle{ id });
-                    }
-
-                    std::vector<cstring> materialNames;
-
-                    materialNames.reserve(materials.size());
-                    for (size_type i = 0; i < materials.size(); i++)
-                    {
-                        materialNames.push_back(materials[i].get_name().c_str());
-                        if (materials[i] == renderer.material)
-                            currentMaterialIdx = i;
-                    }
-
-                    ImGui::Text("Material:");
-                    ImGui::SameLine();
-                    if (ImGui::Combo("##material", &currentMaterialIdx, materialNames.data(), materialNames.size()))
-                    {
-                        renderer.material = materials[currentMaterialIdx];
-                    }
-
-                    ImGui::Indent();
-
-                    auto variants = renderer.material.get_variants();
-
-                    int currentVariantIdx;
-
-                    auto currentVariant = renderer.material.current_variant();
-                    if (currentVariant == 0)
-                        currentVariant = nameHash("default");
-
-                    std::vector<cstring> variantNames;
-                    variantNames.reserve(variants.size());
-                    for (size_type i = 0; i < variants.size(); i++)
-                    {
-                        variantNames.push_back(variants[i].get().name.c_str());
-                        if (nameHash(variants[i].get().name) == currentVariant)
-                            currentVariantIdx = i;
-                    }
-
-                    ImGui::Text("Variant:");
-                    ImGui::SameLine();
-                    if (ImGui::Combo("##variant", &currentVariantIdx, variantNames.data(), variantNames.size()))
-                    {
-                        renderer.material.set_variant(variantNames[currentVariantIdx]);
-                    }
-
-                    for (auto& [id, paramPtr] : variants[currentVariantIdx].get().parameters)
-                    {
-                        DisplayParamEditor(renderer.material, paramPtr->get_name(), paramPtr->type());
-                    }
-
-                    ImGui::Unindent();
-                }
-                else if (ImGui::Button("Add Renderable"))
-                {
-                    selected.add_component<gfx::mesh_renderable>();
-                }
+                DisplayEntityEditor(selected);
             }
             else
             {
-                ImGui::Text("Select an entity to edit its transform.");
+                ImGui::Text("Select an entity to edit its components.");
             }
             base::End();
         }

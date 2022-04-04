@@ -5,6 +5,8 @@
 #include <core/events/events.hpp>
 #include <core/engine/system.inl>
 
+#include <core/particles/particleemitter.hpp>
+
 /**
  * @file particlesystem.hpp
  * @brief A particle system manages one or more emitters
@@ -12,8 +14,6 @@
 
 namespace legion::core
 {
-    struct particle_emitter;
-
     template<typename policy>
     struct particle_policy;
 

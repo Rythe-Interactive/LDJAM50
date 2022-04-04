@@ -1,13 +1,9 @@
 #pragma once
-#include <core/types/types.hpp>
-#include <core/platform/platform.hpp>
-#include <core/particles/particlepolicy.hpp>
+#include "../engine_include.hpp"
 
 namespace legion::core
 {
-    struct particle_emitter;
-
-    struct example_policy : public particle_policy<example_policy>
+    struct [[no_reflect]] example_policy : public particle_policy<example_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(example_policy);
         ~example_policy() = default;
@@ -15,7 +11,7 @@ namespace legion::core
         virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;
     };
 
-    struct orbital_policy : public particle_policy<orbital_policy>
+    struct [[no_reflect]] orbital_policy : public particle_policy<orbital_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(orbital_policy);
         ~orbital_policy() = default;
@@ -29,7 +25,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
-    struct fountain_policy : public particle_policy<fountain_policy>
+    struct [[no_reflect]] fountain_policy : public particle_policy<fountain_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(fountain_policy);
         ~fountain_policy() = default;
@@ -40,7 +36,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
-    struct scale_lifetime_policy : public particle_policy<scale_lifetime_policy>
+    struct [[no_reflect]] scale_lifetime_policy : public particle_policy<scale_lifetime_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(scale_lifetime_policy);
         ~scale_lifetime_policy() = default;
@@ -50,7 +46,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter & emitter, float deltaTime, size_type count) override;
     };
 
-    struct color_lifetime_policy : public particle_policy<color_lifetime_policy>
+    struct [[no_reflect]] color_lifetime_policy : public particle_policy<color_lifetime_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(color_lifetime_policy);
         ~color_lifetime_policy() = default;
@@ -66,7 +62,7 @@ namespace legion::core
         float border;
     };
 
-    struct seperation_policy : public particle_policy<seperation_policy>
+    struct [[no_reflect]] seperation_policy : public particle_policy<seperation_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(seperation_policy);
         ~seperation_policy() = default;
@@ -74,7 +70,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
-    struct alignment_policy : public particle_policy<alignment_policy>
+    struct [[no_reflect]] alignment_policy : public particle_policy<alignment_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(alignment_policy);
         ~alignment_policy() = default;
@@ -82,7 +78,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
-    struct cohesion_policy : public particle_policy<cohesion_policy>
+    struct [[no_reflect]] cohesion_policy : public particle_policy<cohesion_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(cohesion_policy);
         ~cohesion_policy() = default;
@@ -90,7 +86,7 @@ namespace legion::core
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
-    struct locomotion_policy : public particle_policy<locomotion_policy>
+    struct [[no_reflect]] locomotion_policy : public particle_policy<locomotion_policy>
     {
         NO_DTOR_RULE5_NOEXCEPT(locomotion_policy);
         ~locomotion_policy() = default;

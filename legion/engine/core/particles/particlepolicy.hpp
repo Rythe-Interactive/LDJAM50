@@ -1,6 +1,7 @@
 #pragma once
 #include <core/math/math.hpp>
 #include <core/defaults/defaultcomponents.hpp>
+#include <core/particles/particleemitter.hpp>
 
 /**
  * @file particlepolicy.hpp
@@ -9,8 +10,6 @@
 
 namespace legion::core
 {
-    struct particle_emitter;
-
     template<typename bufferType>
     struct particle_buffer;
     template<typename uniformType>

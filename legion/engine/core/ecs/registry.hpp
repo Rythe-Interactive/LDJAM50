@@ -257,6 +257,7 @@ namespace legion::core::ecs
          * @return Pointer to the component.
          */
         L_NODISCARD static void* getComponent(id_type typeId, entity target);
+        L_NODISCARD static reflector getComponentReflector(id_type typeId, entity target);
     };
 
     ReportSubSystem(Registry);

@@ -1,8 +1,6 @@
 #pragma once
-#include <core/core.hpp>
-#include <audio/audio.hpp>
-#include <application/application.hpp>
-#include <rendering/rendering.hpp>
+#include "../engine_include.hpp"
+
 #include "gui_test.hpp"
 //#include "../data/crosshair.hpp"
 

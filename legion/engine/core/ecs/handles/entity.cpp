@@ -69,6 +69,19 @@ namespace legion::core::ecs
         return Registry::entityComposition(data->id);
     }
 
+    entity entity::copy()
+    {
+        return copy(world);
+    }
+
+    entity entity::copy(entity parent)
+    {
+        auto cpy = Registry::createEntity(data->name, parent);
+
+        cpy->active = data->active;
+        return cpy;
+    }
+
     void entity::set_parent(id_type parent)
     {
 #if LEGION_VALIDATION_LEVEL
