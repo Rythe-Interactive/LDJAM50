@@ -40,6 +40,8 @@ namespace legion::core
         size_type m_particleCount = 0;
         //How many particles can spawn every interval     default: 1
         size_type m_spawnRate = 1;
+        //Total amount of particles ever spawned
+        size_type m_totalParticlesSpawned = 0;
 
         //If enabled the particle system will be paused         default: false
         bool m_pause = false;
@@ -53,8 +55,9 @@ namespace legion::core
         //Should particles be in the emitters space or the world space      default: true
         bool localSpace = true;
         //If enabled no particles can die and the emitter will keep spawning them until it reaches the limit        default: false
-        bool particleAging = false;
-
+        //bool particleAging = false;
+        //If enabled the emitter will continue spawning until the total amount of particles that have ever been spawned reaches the capacity
+        bool spawnUntilCap = true;
     private:
         std::vector<bool> m_livingBuffer{};
         std::vector<std::unique_ptr<particle_policy_base>> m_particlePolicies;

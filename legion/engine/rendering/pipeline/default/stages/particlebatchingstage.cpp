@@ -5,13 +5,13 @@ namespace legion::rendering
 {
     void ParticleBatchingStage::setup(app::window& context)
     {
-        create_meta<sparse_map<material_handle, sparse_map<model_handle, std::pair<std::vector<math::mat4>, std::vector<uint>>>>>("particle batches");
+        create_meta<sparse_map<material_handle, sparse_map<model_handle, std::pair<std::vector<math::mat4>, std::vector<float>>>>>("particle batches");
     }
 
     void ParticleBatchingStage::render(app::window& context, camera& cam, const camera::camera_input& camInput, time::span deltaTime)
     {
         static id_type batchesId = nameHash("particle batches");
-        auto* batches = get_meta<sparse_map<material_handle, sparse_map<model_handle, std::pair<std::vector<math::mat4>, std::vector<uint>>>>>(batchesId);
+        auto* batches = get_meta<sparse_map<material_handle, sparse_map<model_handle, std::pair<std::vector<math::mat4>, std::vector<float>>>>>(batchesId);
         static ecs::filter<particle_emitter> emitterFilter;
 
         {
@@ -82,9 +82,9 @@ namespace legion::rendering
             auto& batch = (*batches)[renderer.material][model_handle{ filter.shared_mesh.id() }];
             auto start = batch.first.size();
             batch.first.insert(batch.first.end(), emitter.size(), math::mat4());
-            if (emitter.has_buffer<uint>(frameID))
+            if (emitter.has_buffer<float>(frameID))
             {
-                auto& frameIDBuffer = emitter.get_buffer<uint>(frameID);
+                auto& frameIDBuffer = emitter.get_buffer<float>(frameID);
                 for (size_type i = 0; i < emitter.size(); i++)
                 {
                     id_type particleId = particleIds[i];

@@ -57,6 +57,7 @@ namespace legion::core
 
     struct bounds
     {
+        position center;
         position min;
         position max;
         float border;
@@ -90,6 +91,17 @@ namespace legion::core
     {
         NO_DTOR_RULE5_NOEXCEPT(locomotion_policy);
         ~locomotion_policy() = default;
+
+        virtual void setup(particle_emitter& emitter) override;
+        virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;
+        virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
+    };
+
+
+    struct [[no_reflect]] explosion_policy : public particle_policy<explosion_policy>
+    {
+        NO_DTOR_RULE5_NOEXCEPT(explosion_policy);
+        ~explosion_policy() = default;
 
         virtual void setup(particle_emitter& emitter) override;
         virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;

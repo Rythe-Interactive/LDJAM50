@@ -2,14 +2,15 @@
 #include "../engine_include.hpp"
 
 #include "../components/components.hpp"
-#include "../defaults/defaultpolicies.hpp"
+#include "../data/bounding_box.hpp"
 
 using namespace lgn;
 class EnemySystem final : public legion::System<EnemySystem>
 {
     ecs::filter<position, rotation, scale, rigidbody, enemy_comp> enemies;
     ecs::filter<position, rotation, scale, rigidbody, player_comp> players;
-    bounds bnds{ -25.f,25.f, 5.f };
+    bounding_box bnds{ math::vec3(-100.f), math::vec3(100.f)};
+    float border = 5.f;
 public:
     void setup();
     void update(lgn::time::span);
@@ -22,6 +23,7 @@ public:
     void alignment();
     void cohesion();
     void seperation();
-    void hunt();
+    void hunt(float deltaTime);
+    void shoot(ecs::entity enemy);
 
 };

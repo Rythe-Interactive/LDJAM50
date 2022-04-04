@@ -18,6 +18,13 @@ struct [[reflectable]] bounding_box
         return min + (size() * 0.5f);
     }
 
+    void set_origin(const math::vec3& origin)
+    {
+        auto halfSize = size() * .5f;
+        min = origin - halfSize;
+        max = origin + halfSize;
+    }
+
     void expand(const bounding_box& other) noexcept
     {
         min = math::min(min, other.min);

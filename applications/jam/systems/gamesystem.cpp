@@ -21,14 +21,15 @@ void GameSystem::setup()
     window.show();
     app::context_guard guard(window);
 
-    auto groundplane = createEntity("Ground Plane");
+    //auto groundplane = createEntity("Ground Plane");
     auto groundmat = rendering::MaterialCache::create_material("floor", "assets://shaders/groundplane.shs"_view);
     groundmat.set_param("floorTile", rendering::TextureCache::create_texture("floorTile", "engine://resources/default/tile.png"_view));
     groundmat.set_variant("depth_only");
     groundmat.set_param("floorTile", rendering::TextureCache::create_texture("floorTile", "engine://resources/default/tile.png"_view));
     groundmat.set_variant("default");
-    groundplane.add_component(gfx::mesh_renderer{ groundmat, rendering::ModelCache::create_model("floor", "assets://models/plane.obj"_view) });
-    groundplane.add_component<transform>();
+    rendering::ModelCache::create_model("floor", "assets://models/plane.obj"_view);
+    //groundplane.add_component(gfx::mesh_renderer{ groundmat, rendering::ModelCache::create_model("floor", "assets://models/plane.obj"_view) });
+    //groundplane.add_component<transform>();
 
     auto skyboxMat = rendering::MaterialCache::create_material("skybox", "assets://shaders/skybox.shs"_view);
     skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo7.png"),
@@ -40,9 +41,14 @@ void GameSystem::setup()
         }));
     ecs::world.add_component(gfx::skybox_renderer{ skyboxMat });
 
+    gfx::ModelCache::create_model("Particle", fs::view("assets://models/billboard.glb"));
     gfx::ModelCache::create_model("Bullet", fs::view("assets://models/sphere.obj"));
     auto material = gfx::MaterialCache::create_material("BulletMat", fs::view("assets://shaders/texture.shs"));
     material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
+
+    audio::AudioSegmentCache::createAudioSegment("Explosion", fs::view("assets://audio/fx/Explosion2.wav"));
+    audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
+    audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
 
     initInput();
 
@@ -65,11 +71,8 @@ void GameSystem::setup()
     srl::SerializerRegistry::registerSerializer<math::mat4>();
     srl::SerializerRegistry::registerSerializer<math::color>();
 
+    material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
     material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
-    material.set_param("color", math::colors::magenta);
-    material.set_param("intensity", 1.f);
-    //srl::load<srl::bson, ecs::entity>(fs::view("assets://scenes/scene1.bson"), "scene");
-    auto player = createEntity("Player");
     auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
     material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
     texture_import_settings settings = gfx::default_texture_settings;
@@ -86,39 +89,85 @@ void GameSystem::setup()
     material.set_param("useRoughnessTex", true);
     material.set_param("metallicTex", metallic);
     material.set_param("useMetallicTex", true);
-    player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-    auto [pos, rot, scal] = player.add_component<transform>();
-    player.add_component<player_comp>();
-    auto rb = player.add_component<rigidbody>();
-    rb->linearDrag = .8f;
-    rb->setMass(.1f);
+
+
+    std::vector<fs::view> textures;
     {
-        auto col = player.add_component<collider>();
-        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
+        for (size_type i = 1; i <= 16; i++)
+        {
+            textures.push_back(fs::view("assets://textures/fx/explosion/frame (" + std::to_string(i) + ").png"));
+        }
+        auto explosionArray = gfx::TextureCache::create_texture_array("explosion", textures);
+        auto material = gfx::MaterialCache::create_material("Explosion", fs::view("assets://shaders/particle.shs"));
+        material.set_param("_texture", explosionArray);
+        material.set_variant("depth_only");
+        material.set_param("_texture", explosionArray);
+        material.set_variant("default");
+    }
+    textures.clear();
+    {
+        for (size_type i = 1; i <= 16; i++)
+        {
+            textures.push_back(fs::view("assets://textures/fx/smoke/frame (" + std::to_string(i) + ").png"));
+        }
+        auto smokeArray = gfx::TextureCache::create_texture_array("smoke", textures);
+        auto material = gfx::MaterialCache::create_material("Smoke", fs::view("assets://shaders/particle.shs"));
+        material.set_param("_texture", smokeArray);
+        material.set_variant("depth_only");
+        material.set_param("_texture", smokeArray);
+        material.set_variant("default");
     }
 
-    auto camera_ent = createEntity("Camera");
-    camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
-    camera_ent.add_component<audio::audio_listener>();
-    rendering::camera cam;
-    cam.set_projection(60.f, 0.001f, 1000.f);
-    camera_ent.add_component<gfx::camera>(cam);
-    player.add_child(camera_ent);
+    auto smokeParticles = createEntity("Particle Emitter");
+    smokeParticles.add_component<transform>();
+    auto emitter = smokeParticles.add_component<particle_emitter>();
+    emitter->set_spawn_rate(1);
+    emitter->set_spawn_interval(0.2f);
+    emitter->create_uniform<float>("minLifeTime", 1.f);
+    emitter->create_uniform<float>("maxLifeTime", 1.f);
+    emitter->create_uniform<float>("scaleFactor", 2.f);
+    emitter->create_uniform<uint>("frameCount", 16);
+    emitter->resize(100);
+    emitter->localSpace = true;
+    emitter->add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Particle") , gfx::MaterialCache::get_material("Explosion") });
+    emitter->add_policy<explosion_policy>();
+    emitter->add_policy<scale_lifetime_policy>();
+    emitter->add_policy<flipbook_policy>();
 
-    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-    for (size_type i = 0; i < 20; i++)
+    //Create Player
     {
-        auto enemy = createEntity("Enemy" + std::to_string(i));
-        auto [pos, rot, scal] = enemy.add_component<transform>();
-        scal = scale(.3f);
-        pos = math::ballRand(20.f);
-        enemy.add_component<enemy_comp>();
-        auto rb = enemy.add_component<rigidbody>();
-        enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-        rb->linearDrag = 1.1f;
-        rb->setMass(.8f);
-        auto col = enemy.add_component<collider>();
-        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
+        auto player = createEntity("Player");
+        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        auto [pos, rot, scal] = player.add_component<transform>();
+        player.add_component<audio::audio_listener>();
+        player.add_component<player_comp>();
+        auto rb = player.add_component<rigidbody>();
+        rb->linearDrag = .8f;
+        rb->setMass(.1f);
+
+        auto camera_ent = createEntity("Camera");
+        camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
+        rendering::camera cam;
+        cam.set_projection(60.f, 0.001f, 1000.f);
+        camera_ent.add_component<gfx::camera>(cam);
+        player.add_child(camera_ent);
+    }
+
+    //SpawnEnemies
+    {
+        model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
+        for (size_type i = 0; i < 300; i++)
+        {
+            auto enemy = createEntity();
+            auto [pos, rot, scal] = enemy.add_component<transform>();
+            scal = scale(.3f);
+            pos = math::sphericalRand(70.f);
+            enemy.add_component<enemy_comp>();
+            auto rb = enemy.add_component<rigidbody>();
+            enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+            rb->linearDrag = 1.1f;
+            rb->setMass(.8f);
+        }
     }
 
     for (size_type i = 0; i < 20; i++)
@@ -126,7 +175,8 @@ void GameSystem::setup()
         auto asteroid = createEntity("Asteroid" + std::to_string(i));
         auto [pos, rot, scal] = asteroid.add_component<transform>();
         scal = scale(1.f) * math::linearRand(1.f, 2.f);
-        pos = math::ballRand(25.f);
+        rot = rotation(math::sphericalRand(1.f));
+        pos = math::ballRand(100.f);
         model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
         asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         auto col = asteroid.add_component<collider>();
@@ -146,7 +196,6 @@ void GameSystem::update(legion::time::span deltaTime)
     /*if (escaped)
         mouseOver();*/
 }
-
 void GameSystem::pitch(player_pitch& axis)
 {
     if (escaped)
@@ -165,17 +214,11 @@ void GameSystem::pitch(player_pitch& axis)
 
         angle += axis.value * axis.input_delta * radialMovement;
 
-        //if (angle > -0.001f)
-        //    angle = -0.001f;
-        //if (angle < -(math::pi<float>() - 0.001f))
-        //    angle = -(math::pi<float>() - 0.001f);
-
         up = math::mat3(math::axisAngleMatrix(right, angle)) * fwd;
         fwd = math::cross(right, up);
         rot = (rotation)math::conjugate(math::toQuat(math::lookAt(math::vec3::zero, fwd, up)));
     }
 }
-
 void GameSystem::roll(player_roll& axis)
 {
     using namespace lgn::core;
@@ -186,7 +229,6 @@ void GameSystem::roll(player_roll& axis)
         rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
     }
 }
-
 void GameSystem::yaw(player_yaw& axis)
 {
     if (escaped)
@@ -200,7 +242,6 @@ void GameSystem::yaw(player_yaw& axis)
         rot *= math::angleAxis(axis.value * axis.input_delta * radialMovement, math::vec3::up);
     }
 }
-
 void GameSystem::strafe(player_strafe& axis)
 {
     using namespace lgn;
@@ -213,7 +254,6 @@ void GameSystem::strafe(player_strafe& axis)
         rb.addForce(force);
     }
 }
-
 void GameSystem::vertical(player_vertical& axis)
 {
     using namespace lgn;
@@ -226,7 +266,6 @@ void GameSystem::vertical(player_vertical& axis)
         rb.addForce(force);
     }
 }
-
 void GameSystem::thrust(player_thrust& axis)
 {
     using namespace lgn;
@@ -239,7 +278,6 @@ void GameSystem::thrust(player_thrust& axis)
         rb.addForce(force);
     }
 }
-
 void GameSystem::shoot(player_shoot& action)
 {
     if (escaped)
@@ -252,26 +290,26 @@ void GameSystem::shoot(player_shoot& action)
         if (action.pressed())
         {
             auto bullet = createEntity("Bullet");
-
-            bullet.add_component<gfx::light>(gfx::light::point(math::colors::magenta, 10.f, 15.f));
+            auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::yellow, 5.f, 8.f)).get();
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
             auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
-            b_pos = e_pos.xyz() + e_rot.forward() * 2.f;
-            b_scal = scale(.3f);
+            b_pos = e_pos.xyz() + e_rot.forward() * .5f;
+            b_rot = e_rot;
+            b_scal = scale(.1f, .1f, 1.f);
 
             auto model = gfx::ModelCache::get_handle("Bullet");
-            auto material = gfx::MaterialCache::get_material("Light");
-
-            //material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
+            auto material = gfx::MaterialCache::get_material("PlayerLight");
+            material.set_param("color", math::colors::yellow);
+            material.set_param("intensity", 2.f);
             bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-
+            auto source = bullet.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("LaserShot"));
+            source->play();
             bullet.add_component<bullet_comp>();
             auto shootDir = ent.get_component<rotation>()->forward();
             auto p_vel = ent.get_component<rigidbody>()->velocity;
             auto& b_rb = bullet.add_component<rigidbody>().get();
             b_rb.velocity = p_vel;
-            b_rb.addForce(shootDir * 1000.f);
             b_rb.setMass(.1f);
 
             auto col = bullet.add_component<collider>();
@@ -347,7 +385,6 @@ void GameSystem::onCollision(collision& event)
     //if (bullet)
     //    bullet.destroy();
 }
-
 void GameSystem::mouseOver()
 {
     using namespace lgn;
@@ -418,7 +455,6 @@ void GameSystem::mouseOver()
         }
     }
 }
-
 void GameSystem::initInput()
 {
     using namespace legion;
@@ -465,7 +501,6 @@ void GameSystem::initInput()
     //bindToEvent<restart_action, &GameSystem::onRestart>();
     //bindToEvent<escape_cursor_action, &GameSystem::onEscapeCursor>();
 }
-
 void GameSystem::onGetCamera(lgn::time::span)
 {
     using namespace lgn;
@@ -476,7 +511,6 @@ void GameSystem::onGetCamera(lgn::time::span)
         camera = query[0];
     }
 }
-
 void GameSystem::onShaderReload(reload_shaders_action& event)
 {
     using namespace legion;
@@ -504,7 +538,6 @@ void GameSystem::onShaderReload(reload_shaders_action& event)
         }
     }
 }
-
 void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
 {
     using namespace legion;
@@ -519,7 +552,6 @@ void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
         log::debug("Auto exposure {}", enabled ? "enabled" : "disabled");
     }
 }
-
 void GameSystem::onTonemapSwitch(tonemap_action& event)
 {
     using namespace legion;
@@ -557,7 +589,6 @@ void GameSystem::onTonemapSwitch(tonemap_action& event)
         gfx::Tonemapping::setAlgorithm(typeEnum);
     }
 }
-
 void GameSystem::onSkyboxSwitch(switch_skybox_action& event)
 {
     using namespace legion;
@@ -609,7 +640,6 @@ void GameSystem::onSkyboxSwitch(switch_skybox_action& event)
         log::debug("Set skybox to {}", textures[idx].get_texture().name);
     }
 }
-
 void GameSystem::onExit(exit_action& action)
 {
     using namespace lgn;
@@ -619,7 +649,6 @@ void GameSystem::onExit(exit_action& action)
     if (action.released())
         raiseEvent<events::exit>();
 }
-
 void GameSystem::onRestart(restart_action& action)
 {
     using namespace lgn;
@@ -629,7 +658,6 @@ void GameSystem::onRestart(restart_action& action)
     if (action.released())
         this_engine::restart();
 }
-
 void GameSystem::onFullscreen(fullscreen_action& action)
 {
     using namespace lgn;
@@ -641,7 +669,6 @@ void GameSystem::onFullscreen(fullscreen_action& action)
         app::WindowSystem::requestFullscreenToggle(ecs::world_entity_id, math::ivec2(100, 100), math::ivec2(1360, 768));
     }
 }
-
 void GameSystem::onEscapeCursor(escape_cursor_action& action)
 {
     using namespace lgn;
@@ -666,7 +693,6 @@ void GameSystem::onEscapeCursor(escape_cursor_action& action)
 
     GuiTestSystem::CaptureKeyboard(!escaped);
 }
-
 void GameSystem::onVSYNCSwap(vsync_action& action)
 {
     using namespace lgn;

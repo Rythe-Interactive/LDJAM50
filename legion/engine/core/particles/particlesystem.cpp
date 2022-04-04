@@ -26,7 +26,7 @@ namespace legion::core
 
             emitter.m_elapsedTime += deltaTime;
 
-            if (emitter.m_particleCount < emitter.m_capacity)
+            if (emitter.m_particleCount < emitter.m_capacity && emitter.m_totalParticlesSpawned < emitter.m_capacity)
             {
                 emitter.m_spawnBuffer += deltaTime;
                 if (emitter.m_spawnBuffer > emitter.m_spawnInterval)
@@ -55,7 +55,7 @@ namespace legion::core
 
         emitter.set_alive(startCount, count, true);
         emitter.m_particleCount += count;
-
+        emitter.m_totalParticlesSpawned += count;
         id_type ageBufferId = nameHash("lifetimeBuffer");
         auto& ageBuffer = emitter.has_buffer<life_time>(ageBufferId) ? emitter.get_buffer<life_time>(ageBufferId) : emitter.create_buffer<life_time>("lifetimeBuffer");
         auto minLifeTime = emitter.has_uniform<float>("minLifeTime") ? emitter.get_uniform<float>("minLifeTime") : 0.f;
