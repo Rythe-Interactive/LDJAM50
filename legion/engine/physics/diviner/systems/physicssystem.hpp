@@ -22,54 +22,19 @@ namespace legion::physics
         static bool oneTimeRunActive;
 
         ecs::filter<position, rotation, scale, physicsComponent> manifoldPrecursorQuery;
-
+        ecs::filter<rigidbody> rbQuery;
         //TODO move implementation to a seperate cpp file
 
         virtual void setup();
 
         void fixedUpdate(time::time_span<fast_time> deltaTime)
         {
-            ecs::component_container<rigidbody> rigidbodies;
-            std::vector<byte> hasRigidBodies;
-
-            {
-                rigidbody emptyRigidbody;
-                rigidbodies.resize(manifoldPrecursorQuery.size(), std::ref(emptyRigidbody));
-                hasRigidBodies.resize(manifoldPrecursorQuery.size());
-
-                queueJobs(manifoldPrecursorQuery.size(), [&]() {
-                    id_type index = async::this_job::get_id();
-                    auto entity = manifoldPrecursorQuery[index];
-                    if (entity.has_component<rigidbody>())
-                    {
-                        hasRigidBodies[index] = true;
-                        rigidbodies[index] = entity.get_component<rigidbody>();
-                    }
-                    else
-                        hasRigidBodies[index] = false;
-                    }).wait();
-            }
-
-            auto& physComps = manifoldPrecursorQuery.get<physicsComponent>();
-            auto& positions = manifoldPrecursorQuery.get<position>();
-            auto& rotations = manifoldPrecursorQuery.get<rotation>();
-            auto& scales = manifoldPrecursorQuery.get<scale>();
-
-            if (!IsPaused)
-            {
-                integrateRigidbodies(hasRigidBodies, rigidbodies, m_timeStep);
-                runPhysicsPipeline(hasRigidBodies, rigidbodies, physComps, positions, rotations, scales, m_timeStep);
-                integrateRigidbodyQueryPositionAndRotation(hasRigidBodies, positions, rotations, rigidbodies, m_timeStep);
-            }
-
-            if (oneTimeRunActive)
-            {
-                oneTimeRunActive = false;
-
-                integrateRigidbodies(hasRigidBodies, rigidbodies, m_timeStep);
-                runPhysicsPipeline(hasRigidBodies, rigidbodies, physComps, positions, rotations, scales, m_timeStep);
-                integrateRigidbodyQueryPositionAndRotation(hasRigidBodies, positions, rotations, rigidbodies, m_timeStep);
-            }
+            //if (rbQuery.size() < 1)
+            //    log::error("No rigidbodies found");
+            //else
+            //    log::debug("We have: {} rigidbodies", rbQuery.size());
+            integrateRigidbodies(m_timeStep);
+            integrateRigidbodyQueryPositionAndRotation(m_timeStep);
         }
 
         void bulkRetrievePreManifoldData(
@@ -83,8 +48,8 @@ namespace legion::physics
 
             queueJobs(physComps.size(), [&]() {
                 id_type index = async::this_job::get_id();
-                math::mat4 transf = math::compose( scales[index].get(), rotations[index].get(), positions[index].get());
-                
+                math::mat4 transf = math::compose(scales[index].get(), rotations[index].get(), positions[index].get());
+
                 physicsComponent& individualPhysicsComponent = physComps[index].get();
 
                 for (auto& collider : individualPhysicsComponent.colliders)
@@ -113,7 +78,7 @@ namespace legion::physics
 
         static std::unique_ptr<BroadPhaseCollisionAlgorithm> m_broadPhase;
         const float m_timeStep = 0.02f;
-     
+
         math::ivec3 uniformGridCellSize = math::ivec3(1, 1, 1);
 
         /** @brief Performs the entire physics pipeline (
@@ -127,7 +92,7 @@ namespace legion::physics
             ecs::component_container<rotation>& rotations,
             ecs::component_container<scale>& scales,
             float deltaTime);
-       
+
         /**@brief given 2 physics_manifold_precursors precursorA and precursorB, create a manifold for each collider in precursorA
         * with every other collider in precursorB. The manifolds that involve rigidbodies are then pushed into the given manifold list
         * @param manifoldsToSolve [out] a std::vector of physics_manifold that will store the manifolds created
@@ -136,7 +101,7 @@ namespace legion::physics
         */
         void constructManifoldsWithPrecursors(ecs::component_container<rigidbody>& rigidbodies, std::vector<byte>& hasRigidBodies, physics_manifold_precursor& precursorA, physics_manifold_precursor& precursorB,
             std::vector<physics_manifold>& manifoldsToSolve, bool isRigidbodyInvolved, bool isTriggerInvolved);
-       
+
         void constructManifoldWithCollider(
             ecs::component_container<rigidbody>& rigidbodies, std::vector<byte>& hasRigidBodies,
             PhysicsCollider* colliderA, PhysicsCollider* colliderB
@@ -168,45 +133,40 @@ namespace legion::physics
 
         /** @brief gets all the entities with a rigidbody component and calls the integrate function on them
         */
-        void integrateRigidbodies(std::vector<byte>& hasRigidBodies, ecs::component_container<rigidbody>& rigidbodies, float deltaTime)
+        void integrateRigidbodies(float deltaTime)
         {
-            queueJobs(manifoldPrecursorQuery.size(), [&]() {
-                if (!hasRigidBodies[async::this_job::get_id()])
-                    return;
-
-                rigidbody& rb = rigidbodies[async::this_job::get_id()];
+            //queueJobs(rbQuery.size(), [&]() {
+                //if (!hasRigidBodies[async::this_job::get_id()])
+                //    return;
+            for (auto& ent : rbQuery)
+            {
+                rigidbody& rb = ent.get_component<rigidbody>().get();
 
                 ////-------------------- update velocity ------------------//
+                auto mult = 1.f - rb.linearDrag * deltaTime;
+                if (mult < 0.0f) mult = 0.0f;
                 math::vec3 acc = rb.forceAccumulator * rb.inverseMass;
-                rb.velocity += (acc + constants::gravity) * deltaTime;
-
+                rb.velocity += acc * deltaTime;
+                rb.velocity *= mult;
                 ////-------------------- update angular velocity ------------------//
                 math::vec3 angularAcc = rb.torqueAccumulator * rb.globalInverseInertiaTensor;
                 rb.angularVelocity += (angularAcc)*deltaTime;
 
                 rb.resetAccumulators();
-                }).wait();
+                //}).wait();
+            }
         }
 
-        void integrateRigidbodyQueryPositionAndRotation(
-            std::vector<byte>& hasRigidBodies,
-            ecs::component_container<position>& positions,
-            ecs::component_container<rotation>& rotations,
-            ecs::component_container<rigidbody>& rigidbodies,
-            float deltaTime)
+        void integrateRigidbodyQueryPositionAndRotation(float deltaTime)
         {
-            queueJobs(manifoldPrecursorQuery.size(), [&]() {
-                id_type index = async::this_job::get_id();
-                if (!hasRigidBodies[index])
-                    return;
-
-                rigidbody& rb = rigidbodies[index].get();
-                position& pos = positions[index].get();
-                rotation& rot = rotations[index].get();
+            for (auto& ent : rbQuery)
+            {
+                rigidbody& rb = ent.get_component<rigidbody>().get();
+                position& pos = ent.get_component<position>().get();
+                rotation& rot = ent.get_component<rotation>().get();
 
                 ////-------------------- update position ------------------//
                 pos += rb.velocity * deltaTime;
-
                 ////-------------------- update rotation ------------------//
                 float angle = math::clamp(math::length(rb.angularVelocity), 0.0f, 32.0f);
                 float dtAngle = angle * deltaTime;
@@ -224,7 +184,7 @@ namespace legion::physics
                 rb.globalCentreOfMass = pos;
 
                 rb.UpdateInertiaTensor(rot);
-                }).wait();
+            }
         }
 
         void initializeManifolds(std::vector<physics_manifold>& manifoldsToSolve, std::vector<byte>& manifoldValidity)

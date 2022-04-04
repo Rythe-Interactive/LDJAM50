@@ -15,7 +15,7 @@ namespace legion::physics
 
     std::unique_ptr<BroadPhaseCollisionAlgorithm> PhysicsSystem::m_broadPhase = nullptr;
 
-    bool PhysicsSystem::IsPaused = true;
+    bool PhysicsSystem::IsPaused = false;
     bool PhysicsSystem::oneTimeRunActive = false;
 
 

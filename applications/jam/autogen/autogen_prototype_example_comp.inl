@@ -1,5 +1,5 @@
 #include "autogen_prototype_example_comp.hpp"
-#include "../../jam/systems/examplesystem.hpp"
+#include "../../jam/systems/gamesystem.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {

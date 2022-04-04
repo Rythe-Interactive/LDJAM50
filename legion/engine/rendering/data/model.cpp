@@ -17,7 +17,7 @@ namespace legion::rendering
 
     void model_handle::buffer_data(const buffer& matrixBuffer, const buffer& entityBuffer, const buffer& flipbookBuffer) const
     {
-        ModelCache::buffer_model(id, matrixBuffer, entityBuffer,flipbookBuffer);
+        ModelCache::buffer_model(id, matrixBuffer, entityBuffer, flipbookBuffer);
     }
 
     void model_handle::overwrite_buffer(buffer& newBuffer, uint bufferID, bool perInstance) const
@@ -155,7 +155,7 @@ namespace legion::rendering
 
                 material_handle material = MaterialCache::create_material(name + "/" + mat.name, defaultLitShader);
 
-                if(mat.doubleSided && (mat.transparencyMode == transparency_mode::Blend))
+                if (mat.doubleSided && (mat.transparencyMode == transparency_mode::Blend))
                     material.set_variant("double_sided_transparent");
                 else if (mat.doubleSided)
                     material.set_variant("double_sided");

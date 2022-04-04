@@ -127,29 +127,32 @@
     <ClCompile Include="renderstages\mousehover.cpp" />
     <ClCompile Include="defaults\defaultpolicies.cpp" />
     <ClCompile Include="source.cpp" />
-    <ClCompile Include="systems\examplesystem.cpp" />
+    <ClCompile Include="systems\bulletsystem.cpp" />
+    <ClCompile Include="systems\gamesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
     <ClCompile Include="systems\physics_test_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autogen\autogen.hpp" />
+    <ClInclude Include="components\bulletcomp.hpp" />
+    <ClInclude Include="components\components.hpp" />
+    <ClInclude Include="components\playercomp.hpp" />
     <ClInclude Include="data\pp_bloom.hpp" />
     <ClInclude Include="data\pp_edgedetect.hpp" />
     <ClInclude Include="defaults\defaultpolicies.hpp" />
-    <ClInclude Include="module\examplemodule.hpp" />
+    <ClInclude Include="module\gamemodule.hpp" />
     <ClInclude Include="renderstages\mousehover.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="systems\bulletsystem.hpp" />
     <ClInclude Include="systems\CustomSystem.hpp">
       <SubType>
       </SubType>
     </ClInclude>
-    <ClInclude Include="systems\examplesystem.hpp" />
+    <ClInclude Include="systems\gamesystem.hpp" />
     <ClInclude Include="systems\gui_test.hpp" />
-    <ClInclude Include="systems\mysystem.hpp" />
     <ClInclude Include="systems\physics_test_system.hpp" />
     <ClInclude Include="systems\pointcloud_particlesystem.hpp" />
     <ClInclude Include="data\pp_blur.hpp" />
-    <ClInclude Include="systems\simplecameracontroller.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\kernels\vadd_kernel.cl" />

@@ -1,12 +1,12 @@
 #pragma once
 #include <core/core.hpp>
+#include <physics/physics.hpp>
 
-#include "../systems/mysystem.hpp"
-#include "../systems/examplesystem.hpp"
-#include "../systems/simplecameracontroller.hpp"
+#include "../systems/gamesystem.hpp"
+#include "../systems/bulletsystem.hpp"
 #include "../systems/gui_test.hpp"
 
-class ExampleModule : public legion::Module
+class GameModule : public legion::Module
 {
 public:
     virtual void setup() override
@@ -22,9 +22,9 @@ public:
             0
         );
 
-        //reportSystem<MySystem>();
-        reportSystem<SimpleCameraController>();
-        reportSystem<ExampleSystem>();
+        reportSystem<physics::PhysicsSystem>();
+        reportSystem<GameSystem>();
+        reportSystem<BulletSystem>();
         reportSystem<GuiTestSystem>();
     }
 };
