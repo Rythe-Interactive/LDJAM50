@@ -79,6 +79,17 @@ namespace legion::core::ecs
         auto cpy = Registry::createEntity(data->name, parent);
 
         cpy->active = data->active;
+
+        for (auto componentId : Registry::entityComposition(data->id))
+        {
+            Registry::createComponent(componentId, cpy, Registry::getComponent(componentId, *this));
+        }
+
+        for (auto& child : data->children)
+        {
+            child.copy(cpy);
+        }
+
         return cpy;
     }
 
