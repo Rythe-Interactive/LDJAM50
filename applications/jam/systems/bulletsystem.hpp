@@ -1,6 +1,5 @@
 #pragma once
 #include <core/core.hpp>
-#include <physics/physics.hpp>
 #include <application/application.hpp>
 #include <rendering/rendering.hpp>
 #include <audio/audio.hpp>

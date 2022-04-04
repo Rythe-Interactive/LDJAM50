@@ -47,7 +47,6 @@ void GameSystem::setup()
     material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
 
     initInput();
-    mouseOver();
 
     //Serialization Test
     srl::SerializerRegistry::registerSerializer<example_comp>();
@@ -84,7 +83,7 @@ void GameSystem::setup()
     player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
     auto [pos, rot, scal] = player.add_component<transform>();
     player.add_component<player_comp>();
-    auto rb = player.add_component<physics::rigidbody>();
+    auto rb = player.add_component<rigidbody>();
     rb->linearDrag = 1.1f;
     rb->setMass(.1f);
 
@@ -100,7 +99,10 @@ void GameSystem::setup()
 void GameSystem::update(legion::time::span deltaTime)
 {
     using namespace legion;
+    if (escaped)
+        mouseOver();
 }
+
 void GameSystem::pitch(player_pitch& axis)
 {
     using namespace lgn::core;
@@ -126,6 +128,7 @@ void GameSystem::pitch(player_pitch& axis)
         rot = (rotation)math::conjugate(math::toQuat(math::lookAt(math::vec3::zero, fwd, up)));
     }
 }
+
 void GameSystem::roll(player_roll& axis)
 {
     using namespace lgn::core;
@@ -136,6 +139,7 @@ void GameSystem::roll(player_roll& axis)
         rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
     }
 }
+
 void GameSystem::yaw(player_yaw& axis)
 {
     using namespace lgn::core;
@@ -146,6 +150,7 @@ void GameSystem::yaw(player_yaw& axis)
         rot *= math::angleAxis(axis.value * axis.input_delta* radialMovement, math::vec3::up);
     }
 }
+
 void GameSystem::strafe(player_strafe& axis)
 {
     using namespace lgn;
@@ -153,11 +158,12 @@ void GameSystem::strafe(player_strafe& axis)
     for (auto& ent : playerFilter)
     {
         rotation& rot = ent.get_component<rotation>();
-        physics::rigidbody& rb = ent.get_component<physics::rigidbody>();
+        rigidbody& rb = ent.get_component<rigidbody>();
         auto force = rot.right() * axis.value * axis.input_delta * linearMovement;
         rb.addForce(force);
     }
 }
+
 void GameSystem::vertical(player_vertical& axis)
 {
     using namespace lgn;
@@ -165,11 +171,12 @@ void GameSystem::vertical(player_vertical& axis)
     for (auto& ent : playerFilter)
     {
         rotation& rot = ent.get_component<rotation>();
-        physics::rigidbody& rb = ent.get_component<physics::rigidbody>();
+        rigidbody& rb = ent.get_component<rigidbody>();
         auto force = rot.up() * axis.value * axis.input_delta * linearMovement;
         rb.addForce(force);
     }
 }
+
 void GameSystem::thrust(player_thrust& axis)
 {
     using namespace lgn;
@@ -177,11 +184,12 @@ void GameSystem::thrust(player_thrust& axis)
     for (auto& ent : playerFilter)
     {
         rotation& rot = ent.get_component<rotation>();
-        physics::rigidbody& rb = ent.get_component<physics::rigidbody>();
+        rigidbody& rb = ent.get_component<rigidbody>();
         auto force = rot.forward() * axis.value * axis.input_delta * linearMovement;
         rb.addForce(force);
     }
 }
+
 void GameSystem::shoot(player_shoot& action)
 {
     using namespace lgn;
@@ -205,13 +213,14 @@ void GameSystem::shoot(player_shoot& action)
 
             bullet.add_component<bullet_comp>();
             auto shootDir = ent.get_component<rotation>()->forward();
-            auto p_vel = ent.get_component<physics::rigidbody>()->velocity;
-            auto& b_rb = bullet.add_component<physics::rigidbody>().get();
+            auto p_vel = ent.get_component<rigidbody>()->velocity;
+            auto& b_rb = bullet.add_component<rigidbody>().get();
             b_rb.velocity = p_vel;
             b_rb.addForce(shootDir * 1500.f);
         }
     }
 }
+
 void GameSystem::mouseOver()
 {
     using namespace lgn;
@@ -282,12 +291,13 @@ void GameSystem::mouseOver()
         }
     }
 }
+
 void GameSystem::initInput()
 {
     using namespace legion;
     app::InputSystem::createBinding<restart_action>(app::inputmap::method::F10);
     app::InputSystem::createBinding<fullscreen_action>(app::inputmap::method::F11);
-    app::InputSystem::createBinding<escape_cursor_action>(app::inputmap::method::MOUSE_RIGHT);
+    app::InputSystem::createBinding<escape_cursor_action>(app::inputmap::method::F9);
     app::InputSystem::createBinding<vsync_action>(app::inputmap::method::F1);
     app::InputSystem::createBinding<exit_action>(app::inputmap::method::ESCAPE);
     app::InputSystem::createBinding<tonemap_action>(app::inputmap::method::F2);
@@ -328,6 +338,7 @@ void GameSystem::initInput()
     bindToEvent<escape_cursor_action, &GameSystem::onEscapeCursor>();
     bindToEvent<vsync_action, &GameSystem::onVSYNCSwap>();
 }
+
 void GameSystem::onGetCamera(lgn::time::span)
 {
     using namespace lgn;
@@ -338,6 +349,7 @@ void GameSystem::onGetCamera(lgn::time::span)
         camera = query[0];
     }
 }
+
 void GameSystem::onShaderReload(reload_shaders_action& event)
 {
     using namespace legion;
@@ -365,6 +377,7 @@ void GameSystem::onShaderReload(reload_shaders_action& event)
         }
     }
 }
+
 void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
 {
     using namespace legion;
@@ -379,6 +392,7 @@ void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
         log::debug("Auto exposure {}", enabled ? "enabled" : "disabled");
     }
 }
+
 void GameSystem::onTonemapSwitch(tonemap_action& event)
 {
     using namespace legion;
@@ -416,6 +430,7 @@ void GameSystem::onTonemapSwitch(tonemap_action& event)
         gfx::Tonemapping::setAlgorithm(typeEnum);
     }
 }
+
 void GameSystem::onSkyboxSwitch(switch_skybox_action& event)
 {
     using namespace legion;
@@ -467,6 +482,7 @@ void GameSystem::onSkyboxSwitch(switch_skybox_action& event)
         log::debug("Set skybox to {}", textures[idx].get_texture().name);
     }
 }
+
 void GameSystem::onExit(exit_action& action)
 {
     using namespace lgn;
@@ -476,6 +492,7 @@ void GameSystem::onExit(exit_action& action)
     if (action.released())
         raiseEvent<events::exit>();
 }
+
 void GameSystem::onRestart(restart_action& action)
 {
     using namespace lgn;
@@ -485,6 +502,7 @@ void GameSystem::onRestart(restart_action& action)
     if (action.released())
         this_engine::restart();
 }
+
 void GameSystem::onFullscreen(fullscreen_action& action)
 {
     using namespace lgn;
@@ -496,26 +514,32 @@ void GameSystem::onFullscreen(fullscreen_action& action)
         app::WindowSystem::requestFullscreenToggle(ecs::world_entity_id, math::ivec2(100, 100), math::ivec2(1360, 768));
     }
 }
+
 void GameSystem::onEscapeCursor(escape_cursor_action& action)
 {
-    //using namespace lgn;
-    //if (GuiTestSystem::isEditingText)
-    //    return;
+    using namespace lgn;
+    if (GuiTestSystem::isEditingText)
+        return;
 
-    //if (action.released() && !escaped)
-    //{
-    //    app::window& window = ecs::world.get_component<app::window>();
-    //    escaped = true;
-    //    window.enableCursor(true);
-    //}
-    //else if (action.pressed() && escaped)
-    //{
-    //    app::window& window = ecs::world.get_component<app::window>();
-    //    escaped = false;
-    //    window.enableCursor(false);
-    //}
-    //GuiTestSystem::CaptureKeyboard(!escaped);
+    if (action.released() && (action.mods & app::inputmap::modifier_keys::CTRL))
+    {
+        if (!escaped)
+        {
+            app::window& window = ecs::world.get_component<app::window>();
+            escaped = true;
+            window.enableCursor(true);
+        }
+        else
+        {
+            app::window& window = ecs::world.get_component<app::window>();
+            escaped = false;
+            window.enableCursor(false);
+        }
+    }
+
+    GuiTestSystem::CaptureKeyboard(!escaped);
 }
+
 void GameSystem::onVSYNCSwap(vsync_action& action)
 {
     using namespace lgn;

@@ -76,7 +76,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\;$(SolutionDir)deps\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>legion-core-d.lib;legion-application-d.lib;legion-rendering-d.lib;legion-audio-d.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;Voro++D.lib;legion-physics-d.lib;yaml-cpp-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>legion-core-d.lib;legion-application-d.lib;legion-rendering-d.lib;legion-audio-d.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;yaml-cpp-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <!--
       <AdditionalDependencies>legion-application.lib;legion-audio.lib;legion-core.lib;legion-networking.lib;legion-physics.lib;legion-rendering.lib;legion-scripting.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;%(AdditionalDependencies);mono-2.0-sgen.lib;OptickCore.lib</AdditionalDependencies>
       -->
@@ -109,7 +109,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\;$(SolutionDir)deps\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>legion-core.lib;legion-application.lib;legion-rendering.lib;legion-audio.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;Voro++.lib;legion-physics.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>legion-core.lib;legion-application.lib;legion-rendering.lib;legion-audio.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile />
       <!--
       <AdditionalDependencies>legion-application.lib;legion-audio.lib;legion-core.lib;legion-networking.lib;legion-physics.lib;legion-rendering.lib;legion-scripting.lib;OpenCL.lib;OpenAL32.lib;glfw3.lib;%(AdditionalDependencies);mono-2.0-sgen.lib;OptickCore.lib</AdditionalDependencies>
@@ -124,20 +124,29 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="autogen\autogen.cpp" />
+    <ClCompile Include="broadphase\broadphase.cpp" />
     <ClCompile Include="renderstages\mousehover.cpp" />
     <ClCompile Include="defaults\defaultpolicies.cpp" />
     <ClCompile Include="source.cpp" />
     <ClCompile Include="systems\bulletsystem.cpp" />
     <ClCompile Include="systems\gamesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
+    <ClCompile Include="systems\physicssystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autogen\autogen.hpp" />
+    <ClInclude Include="broadphase\broadphase.hpp" />
+    <ClInclude Include="colliders\collisionshape.hpp" />
     <ClInclude Include="components\bulletcomp.hpp" />
+    <ClInclude Include="components\collider.hpp" />
     <ClInclude Include="components\components.hpp" />
     <ClInclude Include="components\playercomp.hpp" />
+    <ClInclude Include="components\rigidbody.hpp" />
+    <ClInclude Include="data\bounding_box.hpp" />
+    <ClInclude Include="data\collision_pair.hpp" />
     <ClInclude Include="data\pp_bloom.hpp" />
     <ClInclude Include="data\pp_edgedetect.hpp" />
+    <ClInclude Include="data\simplex.hpp" />
     <ClInclude Include="defaults\defaultpolicies.hpp" />
     <ClInclude Include="module\gamemodule.hpp" />
     <ClInclude Include="engine_include.hpp" />
@@ -150,6 +159,7 @@
     </ClInclude>
     <ClInclude Include="systems\gamesystem.hpp" />
     <ClInclude Include="systems\gui_test.hpp" />
+    <ClInclude Include="systems\physicssystem.hpp" />
     <ClInclude Include="systems\pointcloud_particlesystem.hpp" />
     <ClInclude Include="data\pp_blur.hpp" />
   </ItemGroup>

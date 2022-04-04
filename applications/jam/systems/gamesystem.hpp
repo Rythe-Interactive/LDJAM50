@@ -1,6 +1,5 @@
 #pragma once
 #include <core/core.hpp>
-#include <physics/physics.hpp>
 #include <application/application.hpp>
 #include <rendering/rendering.hpp>
 #include <rendering/debugrendering.hpp>
@@ -40,7 +39,7 @@ class GameSystem final : public legion::System<GameSystem>
 {
 public:
     lgn::ecs::entity camera;
-    bool escaped = true;
+    bool escaped = false;
     float linearMovement = 75.f;
     float radialMovement = 500.f;
 

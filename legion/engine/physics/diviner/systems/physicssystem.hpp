@@ -23,6 +23,7 @@ namespace legion::physics
 
         ecs::filter<position, rotation, scale, physicsComponent> manifoldPrecursorQuery;
         ecs::filter<rigidbody> rbQuery;
+
         //TODO move implementation to a seperate cpp file
 
         virtual void setup();
@@ -33,6 +34,9 @@ namespace legion::physics
             //    log::error("No rigidbodies found");
             //else
             //    log::debug("We have: {} rigidbodies", rbQuery.size());
+
+            checkCollisions();
+
             integrateRigidbodies(m_timeStep);
             integrateRigidbodyQueryPositionAndRotation(m_timeStep);
         }
@@ -75,11 +79,15 @@ namespace legion::physics
         }
 
     private:
-
         static std::unique_ptr<BroadPhaseCollisionAlgorithm> m_broadPhase;
         const float m_timeStep = 0.02f;
 
         math::ivec3 uniformGridCellSize = math::ivec3(1, 1, 1);
+
+        void checkCollisions()
+        {
+
+        }
 
         /** @brief Performs the entire physics pipeline (
          * Broadphase Collision Detection, Narrowphase Collision Detection, and the Collision Resolution)
@@ -162,23 +170,29 @@ namespace legion::physics
             for (auto& ent : rbQuery)
             {
                 rigidbody& rb = ent.get_component<rigidbody>().get();
-                position& pos = ent.get_component<position>().get();
-                rotation& rot = ent.get_component<rotation>().get();
+                auto posHandle = ent.get_component<position>();
+                auto rotHandle = ent.get_component<rotation>();
+
+                ////-------------------- update rotation ------------------//
+                rotation rot;
+                if (rotHandle)
+                {
+                    float angle = math::clamp(math::length(rb.angularVelocity), 0.0f, 32.0f);
+                    float dtAngle = angle * deltaTime;
+
+                    if (!math::epsilonEqual(dtAngle, 0.0f, math::epsilon<float>()))
+                    {
+                        math::vec3 axis = math::normalize(rb.angularVelocity);
+
+                        math::quat glmQuat = math::angleAxis(dtAngle, axis);
+                        rot = math::normalize(glmQuat * rotHandle.get());
+                    }
+                }
 
                 ////-------------------- update position ------------------//
-                pos += rb.velocity * deltaTime;
-                ////-------------------- update rotation ------------------//
-                float angle = math::clamp(math::length(rb.angularVelocity), 0.0f, 32.0f);
-                float dtAngle = angle * deltaTime;
-
-                if (!math::epsilonEqual(dtAngle, 0.0f, math::epsilon<float>()))
-                {
-                    math::vec3 axis = math::normalize(rb.angularVelocity);
-
-                    math::quat glmQuat = math::angleAxis(dtAngle, axis);
-                    rot = glmQuat * rot;
-                    rot = math::normalize(rot);
-                }
+                position pos;
+                if (posHandle)
+                    pos = posHandle.get() += rb.velocity * deltaTime;
 
                 //for now assume that there is no offset from bodyP
                 rb.globalCentreOfMass = pos;

@@ -1,5 +1,5 @@
 #include "autogen_reflector_bullet_comp.hpp"
-#include "../../jam/components/bulletcomp.hpp"
+#include "../../jam/broadphase/../data/../components/bulletcomp.hpp"
 namespace legion { using namespace core; }
 namespace legion::core
 {

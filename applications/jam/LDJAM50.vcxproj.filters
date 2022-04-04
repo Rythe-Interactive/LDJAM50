@@ -36,6 +36,12 @@
     <ClCompile Include="systems\bulletsystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="systems\physicssystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="broadphase\broadphase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -87,6 +93,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="systems\bulletsystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\physicssystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="components\rigidbody.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="components\collider.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="colliders\collisionshape.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data\bounding_box.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="broadphase\broadphase.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data\collision_pair.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data\simplex.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

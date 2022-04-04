@@ -11,6 +11,5 @@ void LEGION_CCONV reportModules(legion::Engine* engine)
     engine->reportModule<app::ApplicationModule>();
     engine->reportModule<gfx::RenderingModule>();
     engine->reportModule<audio::AudioModule>();
-    engine->reportModule<physics::PhysicsModule>();
     engine->reportModule<GameModule>();
 }

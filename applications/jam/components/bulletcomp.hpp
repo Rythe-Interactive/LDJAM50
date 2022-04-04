@@ -1,5 +1,5 @@
 #pragma once
-struct bullet_comp
+struct [[reflectable]] bullet_comp
 {
     float damge = 10.f;
     float lifetime = 1.f;

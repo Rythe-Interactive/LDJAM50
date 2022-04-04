@@ -170,7 +170,7 @@
     <ClInclude Include="diviner\data\convex_convergence_identifier.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="autogen\autogen.hpp">
+    <ClInclude Include="autogen\autosagen.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

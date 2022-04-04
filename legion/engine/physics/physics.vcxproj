@@ -30,7 +30,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="autogen\autogen.hpp" />
+    <ClInclude Include="autogen\autosagen.hpp" />
     <ClInclude Include="diviner\broadphasecollisionalgorithms\broadphasebruteforce.hpp" />
     <ClInclude Include="diviner\broadphasecollisionalgorithms\broadphasecollisionalgorithm.hpp" />
     <ClInclude Include="diviner\broadphasecollisionalgorithms\broadphaseuniformgrid.hpp" />

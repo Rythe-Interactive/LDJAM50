@@ -5,6 +5,7 @@
 #include <rendering/pipeline/gui/stages/imguirenderstage.hpp>
 #include <imgui/imgui_internal.h>
 
+#include "../components/components.hpp"
 #include "../renderstages/mousehover.hpp"
 
 LEGION_CLANG_SUPPRESS_WARNING_WITH_PUSH("-Wdeprecated-declarations")
@@ -17,11 +18,233 @@ namespace legion
 
     struct click_action : public app::input_action<click_action> {};
 
+    static void drawOrientedCube(math::vec3 min, math::vec3 max, math::mat4 worldMat, math::color color = math::colors::white, float width = 1.f, float time = 0, bool ignoreDepth = false)
+    {
+        std::pair<math::vec3, math::vec3> edges[] = {
+            std::make_pair(min, math::vec3(min.x, min.y, max.z)),
+            std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(max.x, min.y, max.z)),
+            std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, min.y, min.z)),
+            std::make_pair(math::vec3(max.x, min.y, min.z), min),
+
+            std::make_pair(max, math::vec3(max.x, max.y, min.z)),
+            std::make_pair(math::vec3(max.x, max.y, min.z), math::vec3(min.x, max.y, min.z)),
+            std::make_pair(math::vec3(min.x, max.y, min.z), math::vec3(min.x, max.y, max.z)),
+            std::make_pair(math::vec3(min.x, max.y, max.z), max),
+
+            std::make_pair(min, math::vec3(min.x, max.y, min.z)),
+            std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(min.x, max.y, max.z)),
+            std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, max.y, max.z)),
+            std::make_pair(math::vec3(max.x, min.y, min.z), math::vec3(max.x, max.y, min.z))
+        };
+
+        for (auto& edge : edges)
+            debug::drawLine((worldMat * math::vec4(edge.first.x, edge.first.y, edge.first.z, 1.f)).xyz(), (worldMat * math::vec4(edge.second.x, edge.second.y, edge.second.z, 1.f)).xyz(), color, width, time, ignoreDepth);
+    }
+
+    static void drawOrientedSphere(float diameter, math::mat4 worldMat, math::color color = math::colors::white, float width = 1.f, float time = 0, bool ignoreDepth = false)
+    {
+        math::vec3 vertices[] = {
+           diameter * math::vec3(0.f, -0.5f, -0.f),
+           diameter * math::vec3(0.212662f, -0.425327f, 0.154505f),
+           diameter * math::vec3(-0.081228f, -0.425327f, 0.249997f),
+           diameter * math::vec3(0.361804f, -0.22361f, 0.262862f),
+           diameter * math::vec3(0.425324f, -0.262868f, -0.f),
+           diameter * math::vec3(-0.262865f, -0.425326f, -0.f),
+           diameter * math::vec3(-0.081228f, -0.425327f, -0.249998f),
+           diameter * math::vec3(0.212662f, -0.425327f, -0.154506f),
+           diameter * math::vec3(0.475529f, -0.f, 0.154507f),
+           diameter * math::vec3(-0.138194f, -0.22361f, 0.425324f),
+           diameter * math::vec3(0.131435f, -0.262869f, 0.404506f),
+           diameter * math::vec3(0.f, -0.f, 0.5f),
+           diameter * math::vec3(-0.447213f, -0.223608f, -0.f),
+           diameter * math::vec3(-0.344095f, -0.262868f, 0.249998f),
+           diameter * math::vec3(-0.475529f, -0.f, 0.154507f),
+           diameter * math::vec3(-0.138194f, -0.22361f, -0.425325f),
+           diameter * math::vec3(-0.344095f, -0.262868f, -0.249999f),
+           diameter * math::vec3(-0.293893f, 0.f, -0.404509f),
+           diameter * math::vec3(0.361804f, -0.22361f, -0.262863f),
+           diameter * math::vec3(0.131435f, -0.262869f, -0.404506f),
+           diameter * math::vec3(0.293893f, 0.f, -0.404509f),
+           diameter * math::vec3(0.293893f, -0.f, 0.404509f),
+           diameter * math::vec3(-0.293893f, -0.f, 0.404509f),
+           diameter * math::vec3(-0.475529f, 0.f, -0.154507f),
+           diameter * math::vec3(0.f, 0.f, -0.5f),
+           diameter * math::vec3(0.475529f, 0.f, -0.154507f),
+           diameter * math::vec3(0.138194f, 0.22361f, 0.425325f),
+           diameter * math::vec3(0.344095f, 0.262868f, 0.249999f),
+           diameter * math::vec3(0.081228f, 0.425327f, 0.249998f),
+           diameter * math::vec3(-0.361804f, 0.22361f, 0.262863f),
+           diameter * math::vec3(-0.131435f, 0.262869f, 0.404506f),
+           diameter * math::vec3(-0.212662f, 0.425327f, 0.154506f),
+           diameter * math::vec3(-0.361804f, 0.22361f, -0.262862f),
+           diameter * math::vec3(-0.425324f, 0.262868f, 0.f),
+           diameter * math::vec3(-0.212662f, 0.425327f, -0.154505f),
+           diameter * math::vec3(0.138194f, 0.22361f, -0.425324f),
+           diameter * math::vec3(-0.131435f, 0.262869f, -0.404506f),
+           diameter * math::vec3(0.081228f, 0.425327f, -0.249997f),
+           diameter * math::vec3(0.447213f, 0.223608f, 0.f),
+           diameter * math::vec3(0.344095f, 0.262868f, -0.249998f),
+           diameter * math::vec3(0.262865f, 0.425326f, 0.f),
+           diameter * math::vec3(0.f, 0.5f, 0.f)
+        };
+
+        std::pair<size_type, size_type> indices[]{
+            {0,1},{1,2},{2,0},{3,1},{1,4},{4,3},{2,5},{5,0},{5,6},{6,0},{6,7},{7,0},
+            {4,8},{8,3},{9,10},{10,11},{11,9},{12,13},{13,14},{14,12},{15,16},{16,17},
+            {17,15},{18,19},{19,20},{20,18},{8,21},{21,3},{11,22},{22,9},{14,23},
+            {23,12},{17,24},{24,15},{20,25},{25,18},{26,27},{27,28},{28,26},{29,30},
+            {30,31},{31,29},{32,33},{33,34},{34,32},{35,36},{36,37},{37,35},{38,39},
+            {39,40},{40,38},{40,37},{37,41},{41,40},{39,37},{39,35},{37,34},{34,41},
+            {36,34},{36,32},{34,31},{31,41},{33,31},{33,29},{31,28},{28,41},{30,28},
+            {30,26},{28,40},{27,40},{27,38},{25,39},{38,25},{20,39},{20,35},{24,36},
+            {35,24},{17,36},{17,32},{23,33},{32,23},{14,33},{14,29},{22,30},{29,22},
+            {11,30},{11,26},{21,27},{26,21},{8,27},{8,38},{20,24},{19,24},{19,15},
+            {17,23},{16,23},{16,12},{14,22},{13,22},{13,9},{11,21},{10,21},{10,3},
+            {8,25},{4,25},{4,18},{7,19},{18,7},{6,19},{6,15},{6,16},{5,16},{5,12},
+            {5,13},{2,13},{2,9},{4,7},{1,7},{2,10},{1,10} };
+
+        for (auto& [start, end] : indices)
+            debug::drawLine((worldMat * math::vec4(vertices[start].x, vertices[start].y, vertices[start].z, 1.f)).xyz(), (worldMat * math::vec4(vertices[end].x, vertices[end].y, vertices[end].z, 1.f)).xyz(), color, width, time, ignoreDepth);
+    }
+
+    class CustomEditor
+    {
+    public:
+        inline static math::mat4 view = math::mat4(1.f);
+        inline static math::mat4 projection = math::mat4(1.f);
+
+        virtual void drawEditor(ecs::entity target) LEGION_PURE;
+        virtual id_type componentId() LEGION_PURE;
+    };
+
+    class ColliderEditor final : public CustomEditor
+    {
+    public:
+        virtual void drawEditor(ecs::entity target)
+        {
+            using namespace imgui;
+            collider& value = target.get_component<collider>();
+
+            math::mat4 transf;
+            if (target.has_component<transform>())
+            {
+                transf = transform(target.get_component<transform>()).to_world_matrix();
+            }
+
+            if (ImGui::BeginMenu("Add collision shape"))
+            {
+                if (ImGui::MenuItem("Sphere"))
+                {
+                    value.add_shape<SphereCollider>();
+                }
+
+                if (ImGui::MenuItem("Box"))
+                {
+                    value.add_shape<BoxCollider>();
+                }
+
+                ImGui::EndMenu();
+            }
+
+            size_type idx = 0;
+            bool dirty = false;
+
+            for (auto& shape : value.shapes)
+            {
+                ImGui::Separator();
+
+                ImGui::PushID(idx++);
+                ImGui::LabelText("##ColliderType", shape->typeName());
+                ImGui::SameLine();
+                if (ImGui::Button("Remove"))
+                {
+                    if (idx != value.shapes.size())
+                        std::swap(value.shapes[idx - 1], value.shapes[value.shapes.size() - 1]);
+                    value.shapes.pop_back();
+                    dirty = true;
+                    ImGui::PopID();
+                    break;
+                }
+
+                math::vec3 offset = shape->getOffset();
+                if (ImGui::InputFloat3("Offset", value_ptr(offset)))
+                {
+                    shape->setOffset(offset);
+                    dirty = true;
+                }
+
+                math::vec3 scale = shape->getScale();
+                if (ImGui::InputFloat3("Scale", value_ptr(scale)))
+                {
+                    shape->setScale(scale);
+                    dirty = true;
+                }
+
+                if (shape->typeId() == typeHash<SphereCollider>())
+                {
+                    SphereCollider* ptr = static_cast<SphereCollider*>(shape.get());
+                    float radius = ptr->getRadius();
+                    if (ImGui::InputFloat("Radius", &radius))
+                    {
+                        ptr->setRadius(radius);
+                        dirty = true;
+                    }
+
+                    math::mat4 local = math::compose(scale, math::quat(), offset);
+
+                    drawOrientedSphere(radius*2.f, transf * local, math::colors::lightgrey, 5.f);
+                }
+                else if (shape->typeId() == typeHash<BoxCollider>())
+                {
+                    BoxCollider* ptr = static_cast<BoxCollider*>(shape.get());
+                    math::vec3 size = ptr->getSize();
+                    if (ImGui::InputFloat3("Size", value_ptr(size)))
+                    {
+                        ptr->setSize(size);
+                        dirty = true;
+                    }
+
+                    drawOrientedCube(ptr->bounds.min, ptr->bounds.max, transf, math::colors::lightgrey, 5.f);
+                }
+
+                ImGui::PopID();
+            }
+
+            if (dirty)
+            {
+                if (value.shapes.empty())
+                {
+                    value.bounds = bounding_box();
+                }
+                else
+                {
+                    value.bounds.min = math::vec3(std::numeric_limits<float>::max());
+                    value.bounds.max = math::vec3(std::numeric_limits<float>::min());
+                    for (auto& shape : value.shapes)
+                    {
+                        value.bounds.expand(shape->bounds);
+                    }
+                }
+            }
+
+            ImGui::Separator();
+
+            ImGui::LabelText("##Bounds", "Bounds");
+            ImGui::InputFloat3("Min", value_ptr(value.bounds.min), "%.3f", ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputFloat3("Max", value_ptr(value.bounds.max), "%.3f", ImGuiInputTextFlags_ReadOnly);
+            drawOrientedCube(value.bounds.min, value.bounds.max, transf, math::colors::darkgrey);
+        };
+
+        virtual id_type componentId() { return typeHash<collider>(); };
+    };
+
     class GuiTestSystem : public System<GuiTestSystem>
     {
         static bool captured;
 
         bool clicked = false;
+
+        inline static std::vector<std::unique_ptr<CustomEditor>> editors;
 
     public:
         static bool isEditingText;
@@ -36,12 +259,18 @@ namespace legion
             captured = false;
         }
 
+        template<typename T, std::enable_if_t<std::is_base_of_v<CustomEditor, T>, bool> = true, typename... Args>
+        static void addCustomEditor(Args&&... args)
+        {
+            editors.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+        }
+
         ecs::filter<camera, transform> cameraQuery;
         static ecs::entity selected;
 
-        math::mat4 view = math::mat4(1.0f);
-        math::mat4 projection = math::mat4(1.0f);
-        math::mat4 model = math::mat4(1.0f);
+        math::mat4 view = math::mat4(1.f);
+        math::mat4 projection = math::mat4(1.f);
+        math::mat4 model = math::mat4(1.f);
         imgui::filebrowser::ImGuiFileBrowser browser;
 
         void onClick(click_action& event)
@@ -59,6 +288,8 @@ namespace legion
 
             //gui code goes here
             ImGuiStage::addGuiRender<GuiTestSystem, &GuiTestSystem::onGUI>(this);
+
+            addCustomEditor<ColliderEditor>();
         }
 
         // BuildTree creates a rudimentary Entity View, as entities do currently not have the ability to be named
@@ -465,7 +696,7 @@ namespace legion
                 const char* label_end = ImGui::FindRenderedTextEnd(name);
                 if (name != label_end)
                 {
-                    ImGui::SameLine(0.0f, g.Style.ItemInnerSpacing.x);
+                    ImGui::SameLine(0.f, g.Style.ItemInnerSpacing.x);
                     ImGui::TextEx(name, label_end);
                 }
 
@@ -849,7 +1080,7 @@ namespace legion
                 ImGui::PushID(memberName.data());
                 if (member.is_object)
                 {
-                    DisplayGenericObjectEditor(memberName, member.object, level+1);
+                    DisplayGenericObjectEditor(memberName, member.object, level + 1);
                 }
                 else
                 {
@@ -871,6 +1102,9 @@ namespace legion
                 if (prehandled == componentId)
                     return false;
 
+
+            ImGui::Separator();
+
             auto refl = ecs::Registry::getComponentReflector(componentId, target);
 
             ImGui::PushID(componentId);
@@ -886,6 +1120,14 @@ namespace legion
             }
 
             ImGui::Indent();
+
+            for (auto& editor : editors)
+                if (editor->componentId() == componentId)
+                {
+                    editor->drawEditor(target);
+                    ImGui::PopID();
+                    return false;
+                }
 
             for (auto& [name, member] : refl.members)
             {
@@ -912,9 +1154,24 @@ namespace legion
             using namespace imgui;
             static bool showGizmo = true;
 
+            CustomEditor::view = view;
+            CustomEditor::projection = projection;
+
+            std::string editorLabel = "Entity: ";
+            if (target->name.empty())
+                editorLabel += std::to_string(target->id);
+            else
+                editorLabel += target->name;
+
+            ImGui::LabelText("##entity", editorLabel.c_str());
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Active", target->active))
+                target->active = !target->active;
+
+            ImGui::Separator();
+
             if (target.has_component<position>() && target.has_component<rotation>() && target.has_component<scale>())
             {
-
                 ImGui::LabelText("##transform", "Transform");
 
                 ImGui::Indent();
@@ -945,6 +1202,8 @@ namespace legion
                     return;
             }
 
+            ImGui::Separator();
+
             if (ImGui::BeginMenu("Add component"))
             {
                 auto& families = ecs::Registry::getFamilies();
@@ -960,6 +1219,9 @@ namespace legion
                 }
                 ImGui::EndMenu();
             }
+
+            ImGui::Separator();
+
             if (target.has_component<mesh_filter>())
             {
                 DisplayMeshFilterEditor(target);

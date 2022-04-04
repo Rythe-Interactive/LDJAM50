@@ -4,6 +4,7 @@
 #include "../systems/gamesystem.hpp"
 #include "../systems/bulletsystem.hpp"
 #include "../systems/gui_test.hpp"
+#include "../systems/physicssystem.hpp"
 
 class GameModule : public legion::Module
 {
@@ -21,7 +22,7 @@ public:
             0
         );
 
-        reportSystem<physics::PhysicsSystem>();
+        reportSystem<PhysicsSystem>();
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
         reportSystem<GuiTestSystem>();
