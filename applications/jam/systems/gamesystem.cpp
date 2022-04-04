@@ -102,12 +102,22 @@ void GameSystem::setup()
         auto enemy = createEntity();
         auto [pos, rot, scal] = enemy.add_component<transform>();
         scal = scale(.3f);
-        pos = math::sphericalRand(10.f);
+        pos = math::ballRand(10.f);
         enemy.add_component<enemy_comp>();
         auto rb = enemy.add_component<physics::rigidbody>();
         enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         rb->linearDrag = 1.1f;
         rb->setMass(.8f);
+    }
+
+    for (size_type i = 0; i < 50; i++)
+    {
+        auto asteroid = createEntity();
+        auto [pos, rot, scal] = asteroid.add_component<transform>();
+        scal = scale(1.f) * math::linearRand(1.f, 2.f);
+        pos = math::ballRand(25.f);
+        model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
+        asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
     }
 }
 
