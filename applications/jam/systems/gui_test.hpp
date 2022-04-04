@@ -1235,9 +1235,6 @@ namespace legion
 
         void onGUI(L_MAYBEUNUSED app::window& context, camera& cam, const camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime)
         {
-            //if (!SceneManager::currentScene)
-              //  SceneManager::currentScene = SceneManager::create_scene();
-
             ImGuiIO& io = ImGui::GetIO();
 
             if (clicked && !io.MouseDownOwned[0])
@@ -1265,6 +1262,7 @@ namespace legion
             gizmo::SetOrthographic(false);
 
             DisplayFileHandling();
+
 
             std::string windowName = "Entities";
 

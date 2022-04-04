@@ -27,6 +27,6 @@ public:
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
         reportSystem<EnemySystem>();
-        reportSystem<GuiTestSystem>();
+        //reportSystem<GuiTestSystem>();
     }
 };

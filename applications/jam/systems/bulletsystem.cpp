@@ -18,8 +18,12 @@ void BulletSystem::update(lgn::time::span deltaTime)
             ent.destroy();
             continue;
         }
+        auto& rb = ent.get_component<rigidbody>().get();
+        auto& rot = ent.get_component<rotation>().get();
+        rb.addForce(rot.forward() * 2000.f * (float)deltaTime);
 
         auto& scal = ent.get_component<scale>().get();
+        scal.z = math::length(math::normalize(rb.velocity)*2.f);
         scal = scal * (1.f - (bullet.age / bullet.lifetime));
     }
 }

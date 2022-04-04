@@ -105,8 +105,10 @@ namespace legion::core
 #pragma region Scale over Lifetime
     void scale_lifetime_policy::setup(particle_emitter& emitter)
     {
+        if (!emitter.has_uniform<scale>("initScale"))
+            emitter.create_uniform<scale>("initScale", scale(1.f));
         if (!emitter.has_uniform<float>("scaleFactor"))
-            emitter.create_uniform<float>("scaleFactor") = .2f;
+            emitter.create_uniform<float>("scaleFactor") = 1.f;
     }
 
     void scale_lifetime_policy::onInit(particle_emitter& emitter, size_type start, size_type end)
@@ -115,10 +117,10 @@ namespace legion::core
         auto& scaleBuffer = emitter.has_buffer<scale>(scaleBufferId) ? emitter.get_buffer<scale>(scaleBufferId) : emitter.create_buffer<scale>("scaleBuffer");
         auto& ageBuffer = emitter.get_buffer<life_time>("lifetimeBuffer");
         auto scaleFactor = emitter.get_uniform<float>("scaleFactor");
-
+        auto& initScale = emitter.get_uniform<scale>("initScale");
         for (size_type idx = start; idx < end; idx++)
         {
-            scaleBuffer[idx] = scale(scaleFactor) * math::linearRand(.1f, 1.f);
+            scaleBuffer[idx] = initScale;
         }
     }
 
@@ -126,18 +128,19 @@ namespace legion::core
     {
         auto& ageBuffer = emitter.get_buffer<life_time>("lifetimeBuffer");
         auto& scaleBuffer = emitter.get_buffer<scale>("scaleBuffer");
-
         auto scaleFactor = emitter.get_uniform<float>("scaleFactor");
+        auto& initScale = emitter.get_uniform<scale>("initScale");
 
         if (emitter.has_uniform<float>("minLifeTime") && emitter.has_uniform<float>("maxLifeTime"))
         {
             for (size_type idx = 0; idx < count; idx++)
             {
-                scaleBuffer[idx] = scale(scaleFactor - ((ageBuffer[idx].age / ageBuffer[idx].max) * scaleFactor));
+                scaleBuffer[idx] = initScale + scaleFactor - ((ageBuffer[idx].age / ageBuffer[idx].max) * scaleFactor);
             }
         }
     }
 #pragma endregion
+#pragma region Color over Liftime
     void color_lifetime_policy::setup(particle_emitter& emitter)
     {
         if (!emitter.has_buffer<math::color>("colorBuffer"))
@@ -163,7 +166,7 @@ namespace legion::core
             }
         }
     }
-
+#pragma endregion
 #pragma region Boids
 #pragma region Locomotion
     void locomotion_policy::setup(particle_emitter& emitter)
@@ -366,5 +369,34 @@ namespace legion::core
     }
 
 #pragma endregion
+#pragma endregion
+#pragma region Explosion
+    void explosion_policy::setup(particle_emitter& emitter)
+    {
+        if (!emitter.has_buffer<velocity>("velBuffer"))
+            emitter.create_buffer<velocity>("velBuffer");
+        if (!emitter.has_buffer<position>("posBuffer"))
+            emitter.create_buffer<position>("posBuffer");
+    }
+    void explosion_policy::onInit(particle_emitter& emitter, size_type start, size_type end)
+    {
+        auto& posBuffer = emitter.get_buffer<position>("posBuffer");
+        auto& velBuffer = emitter.get_buffer<velocity>("velBuffer");
+
+        for (size_type idx = start; idx < end; idx++)
+        {
+            posBuffer[idx] = math::ballRand(1.f);
+            velBuffer[idx] = math::normalize(posBuffer[idx]) * 2.f;
+        }
+    }
+    void explosion_policy::onUpdate(particle_emitter& emitter, float deltaTime, size_type count)
+    {
+        auto& posBuffer = emitter.get_buffer<position>("posBuffer");
+        auto& velBuffer = emitter.get_buffer<velocity>("velBuffer");
+        for (size_type idx = 0; idx < count; idx++)
+        {
+            posBuffer[idx] += velBuffer[idx] * deltaTime;
+        }
+    }
 #pragma endregion
 }
