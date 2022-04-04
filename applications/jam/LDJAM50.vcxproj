@@ -129,6 +129,7 @@
     <ClCompile Include="defaults\defaultpolicies.cpp" />
     <ClCompile Include="source.cpp" />
     <ClCompile Include="systems\bulletsystem.cpp" />
+    <ClCompile Include="systems\enemysystem.cpp" />
     <ClCompile Include="systems\gamesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
     <ClCompile Include="systems\physicssystem.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="components\bulletcomp.hpp" />
     <ClInclude Include="components\collider.hpp" />
     <ClInclude Include="components\components.hpp" />
+    <ClInclude Include="components\enemycomp.hpp" />
     <ClInclude Include="components\playercomp.hpp" />
     <ClInclude Include="components\rigidbody.hpp" />
     <ClInclude Include="data\bounding_box.hpp" />
@@ -157,6 +159,7 @@
       <SubType>
       </SubType>
     </ClInclude>
+    <ClInclude Include="systems\enemysystem.hpp" />
     <ClInclude Include="systems\gamesystem.hpp" />
     <ClInclude Include="systems\gui_test.hpp" />
     <ClInclude Include="systems\physicssystem.hpp" />

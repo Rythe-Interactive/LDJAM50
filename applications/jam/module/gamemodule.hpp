@@ -3,6 +3,7 @@
 
 #include "../systems/gamesystem.hpp"
 #include "../systems/bulletsystem.hpp"
+#include "../systems/enemysystem.hpp"
 #include "../systems/gui_test.hpp"
 #include "../systems/physicssystem.hpp"
 
@@ -25,6 +26,7 @@ public:
         reportSystem<PhysicsSystem>();
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
+        reportSystem<EnemySystem>();
         reportSystem<GuiTestSystem>();
     }
 };

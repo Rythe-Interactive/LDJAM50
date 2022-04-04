@@ -94,6 +94,30 @@ void GameSystem::setup()
     cam.set_projection(60.f, 0.001f, 1000.f);
     camera_ent.add_component<gfx::camera>(cam);
     player.add_child(camera_ent);
+
+    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamStealth.glb"));
+    for (size_type i = 0; i < 200; i++)
+    {
+        auto enemy = createEntity();
+        auto [pos, rot, scal] = enemy.add_component<transform>();
+        scal = scale(.3f);
+        pos = math::ballRand(10.f);
+        enemy.add_component<enemy_comp>();
+        auto rb = enemy.add_component<physics::rigidbody>();
+        enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        rb->linearDrag = 1.1f;
+        rb->setMass(.8f);
+    }
+
+    for (size_type i = 0; i < 50; i++)
+    {
+        auto asteroid = createEntity();
+        auto [pos, rot, scal] = asteroid.add_component<transform>();
+        scal = scale(1.f) * math::linearRand(1.f, 2.f);
+        pos = math::ballRand(25.f);
+        model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
+        asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+    }
 }
 
 void GameSystem::update(legion::time::span deltaTime)
@@ -147,7 +171,7 @@ void GameSystem::yaw(player_yaw& axis)
     for (auto& ent : playerFilter)
     {
         rotation& rot = ent.get_component<rotation>();
-        rot *= math::angleAxis(axis.value * axis.input_delta* radialMovement, math::vec3::up);
+        rot *= math::angleAxis(axis.value * axis.input_delta * radialMovement, math::vec3::up);
     }
 }
 
@@ -200,6 +224,7 @@ void GameSystem::shoot(player_shoot& action)
         {
             auto bullet = createEntity();
 
+            bullet.add_component<gfx::light>(gfx::light::point(math::colors::white, 5.f, 16.f));
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
             auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
