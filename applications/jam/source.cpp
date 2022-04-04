@@ -1,7 +1,7 @@
 #define LEGION_ENTRY
 #include "engine_include.hpp"
 
-#include "module/examplemodule.hpp"
+#include "module/gamemodule.hpp"
 
 
 void LEGION_CCONV reportModules(legion::Engine* engine)
@@ -12,5 +12,5 @@ void LEGION_CCONV reportModules(legion::Engine* engine)
     engine->reportModule<gfx::RenderingModule>();
     engine->reportModule<audio::AudioModule>();
     engine->reportModule<physics::PhysicsModule>();
-    engine->reportModule<ExampleModule>();
+    engine->reportModule<GameModule>();
 }

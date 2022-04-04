@@ -21,7 +21,7 @@
     <ClCompile Include="systems\gui_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="systems\examplesystem.cpp">
+    <ClCompile Include="systems\gamesystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="renderstages\mousehover.cpp">
@@ -31,6 +31,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="autogen\autogen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\bulletsystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,13 +53,10 @@
     <ClInclude Include="data\pp_bloom.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="module\examplemodule.hpp">
+    <ClInclude Include="module\gamemodule.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="systems\examplesystem.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\simplecameracontroller.hpp">
+    <ClInclude Include="systems\gamesystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="systems\gui_test.hpp">
@@ -75,6 +75,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="engine_include.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="components\playercomp.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="components\components.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="components\bulletcomp.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\bulletsystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
