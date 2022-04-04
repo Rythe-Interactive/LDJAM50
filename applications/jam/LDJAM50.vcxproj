@@ -145,10 +145,11 @@
     <ClInclude Include="components\playercomp.hpp" />
     <ClInclude Include="components\rigidbody.hpp" />
     <ClInclude Include="data\bounding_box.hpp" />
-    <ClInclude Include="data\collision_pair.hpp" />
+    <ClInclude Include="data\collision_data.hpp" />
     <ClInclude Include="data\pp_bloom.hpp" />
     <ClInclude Include="data\pp_edgedetect.hpp" />
     <ClInclude Include="data\simplex.hpp" />
+    <ClInclude Include="debug_utils.hpp" />
     <ClInclude Include="defaults\defaultpolicies.hpp" />
     <ClInclude Include="module\gamemodule.hpp" />
     <ClInclude Include="engine_include.hpp" />

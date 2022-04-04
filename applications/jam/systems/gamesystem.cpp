@@ -31,7 +31,7 @@ void GameSystem::setup()
     groundplane.add_component<transform>();
 
     auto skyboxMat = rendering::MaterialCache::create_material("skybox", "assets://shaders/skybox.shs"_view);
-    skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo.png"),
+    skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo7.png"),
         texture_import_settings
         {
             texture_type::two_dimensional, true, channel_format::eight_bit, texture_format::rgba_hdr,
@@ -59,10 +59,15 @@ void GameSystem::setup()
     srl::SerializerRegistry::registerSerializer<assets::asset<mesh>>();
     srl::SerializerRegistry::registerSerializer<material_data>();
     srl::SerializerRegistry::registerSerializer<mesh_filter>();
+    srl::SerializerRegistry::registerSerializer<math::vec2>();
+    srl::SerializerRegistry::registerSerializer<math::vec3>();
+    srl::SerializerRegistry::registerSerializer<math::vec4>();
+    srl::SerializerRegistry::registerSerializer<math::mat4>();
+    srl::SerializerRegistry::registerSerializer<math::color>();
 
     material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
     material.set_param("color", math::colors::magenta);
-    material.set_param("intensity", 30.f);
+    material.set_param("intensity", 1.f);
     //srl::load<srl::bson, ecs::entity>(fs::view("assets://scenes/scene1.bson"), "scene");
     auto player = createEntity("Player");
     auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
@@ -84,9 +89,13 @@ void GameSystem::setup()
     player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
     auto [pos, rot, scal] = player.add_component<transform>();
     player.add_component<player_comp>();
-    auto rb = player.add_component<physics::rigidbody>();
+    auto rb = player.add_component<rigidbody>();
     rb->linearDrag = .8f;
     rb->setMass(.1f);
+    {
+        auto col = player.add_component<collider>();
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
+    }
 
     auto camera_ent = createEntity("Camera");
     camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
@@ -97,9 +106,9 @@ void GameSystem::setup()
     player.add_child(camera_ent);
 
     model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-    for (size_type i = 0; i < 200; i++)
+    for (size_type i = 0; i < 20; i++)
     {
-        auto enemy = createEntity();
+        auto enemy = createEntity("Enemy" + std::to_string(i));
         auto [pos, rot, scal] = enemy.add_component<transform>();
         scal = scale(.3f);
         pos = math::ballRand(20.f);
@@ -108,28 +117,41 @@ void GameSystem::setup()
         enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         rb->linearDrag = 1.1f;
         rb->setMass(.8f);
+        auto col = enemy.add_component<collider>();
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
     }
 
-    for (size_type i = 0; i < 50; i++)
+    for (size_type i = 0; i < 20; i++)
     {
-        auto asteroid = createEntity();
+        auto asteroid = createEntity("Asteroid" + std::to_string(i));
         auto [pos, rot, scal] = asteroid.add_component<transform>();
         scal = scale(1.f) * math::linearRand(1.f, 2.f);
         pos = math::ballRand(25.f);
         model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
         asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        auto col = asteroid.add_component<collider>();
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.f);
+
+        auto rb = asteroid.add_component<rigidbody>();
+        rb->setMass(15.f);
+
     }
+
+    bindToEvent<collision, &GameSystem::onCollision>();
 }
 
 void GameSystem::update(legion::time::span deltaTime)
 {
     using namespace legion;
-    if (escaped)
-        mouseOver();
+    /*if (escaped)
+        mouseOver();*/
 }
 
 void GameSystem::pitch(player_pitch& axis)
 {
+    if (escaped)
+        return;
+
     using namespace lgn::core;
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
@@ -167,6 +189,9 @@ void GameSystem::roll(player_roll& axis)
 
 void GameSystem::yaw(player_yaw& axis)
 {
+    if (escaped)
+        return;
+
     using namespace lgn::core;
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
@@ -217,15 +242,18 @@ void GameSystem::thrust(player_thrust& axis)
 
 void GameSystem::shoot(player_shoot& action)
 {
+    if (escaped)
+        return;
+
     using namespace lgn;
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
     {
         if (action.pressed())
         {
-            auto bullet = createEntity();
+            auto bullet = createEntity("Bullet");
 
-            bullet.add_component<gfx::light>(gfx::light::point(math::colors::magenta, 30.f, 15.f));
+            bullet.add_component<gfx::light>(gfx::light::point(math::colors::magenta, 10.f, 15.f));
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
             auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
@@ -245,8 +273,79 @@ void GameSystem::shoot(player_shoot& action)
             b_rb.velocity = p_vel;
             b_rb.addForce(shootDir * 1000.f);
             b_rb.setMass(.1f);
+
+            auto col = bullet.add_component<collider>();
+            col->add_shape<SphereCollider>();
         }
     }
+}
+
+void GameSystem::onCollision(collision& event)
+{
+    log::debug("Collision between {} and {}, with normal {}, and depth {}",
+        event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
+        event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
+        event.normal.axis, event.normal.depth);
+
+    ecs::entity other;
+    ecs::entity bullet;
+
+    if (event.first.has_component<bullet_comp>())
+    {
+        bullet = event.first;
+        other = event.second;
+    }
+    else if (event.second.has_component<bullet_comp>())
+    {
+        bullet = event.second;
+        other = event.first;
+    }
+
+    if (bullet)
+    {
+        bullet_comp& bulletComp = bullet.get_component<bullet_comp>();
+
+
+        if (other.has_component<player_comp>())
+        {
+            return;
+        }
+        else if (other.has_component<enemy_comp>())
+        {
+            enemy_comp& enemyComp = other.get_component<enemy_comp>();
+            enemyComp.health -= bulletComp.damge;
+
+            log::debug("enemy {} health: {}", other->name, enemyComp.health);
+
+            if (enemyComp.health <= 0.f)
+                other.destroy();
+        }
+    }
+
+    position& posA = event.first.get_component<position>();
+    position& posB = event.second.get_component<position>();
+
+    auto normal = math::normalize(posA - posB);
+    auto mtv = normal * std::abs(event.normal.depth);
+
+    rigidbody& rbA = event.first.get_component<rigidbody>();
+    rigidbody& rbB = event.second.get_component<rigidbody>();
+
+    float cumulativeMass = (1.f / rbA.inverseMass) + (1.f / rbB.inverseMass);
+
+    float massParcentageA = (1.f / rbA.inverseMass) / cumulativeMass;
+    float massParcentageB = 1.f - massParcentageA;
+
+    posA += mtv * massParcentageB;
+    posB -= mtv * massParcentageA;
+
+    float energy = math::dot(rbA.velocity, -normal) + math::dot(rbB.velocity, normal);
+
+    rbA.addForce(normal * massParcentageB * energy);
+    rbB.addForce(normal * -massParcentageA * energy);
+
+    //if (bullet)
+    //    bullet.destroy();
 }
 
 void GameSystem::mouseOver()
@@ -323,15 +422,15 @@ void GameSystem::mouseOver()
 void GameSystem::initInput()
 {
     using namespace legion;
-    app::InputSystem::createBinding<restart_action>(app::inputmap::method::F10);
     app::InputSystem::createBinding<fullscreen_action>(app::inputmap::method::F11);
-    app::InputSystem::createBinding<escape_cursor_action>(app::inputmap::method::F9);
     app::InputSystem::createBinding<vsync_action>(app::inputmap::method::F1);
-    app::InputSystem::createBinding<exit_action>(app::inputmap::method::ESCAPE);
     app::InputSystem::createBinding<tonemap_action>(app::inputmap::method::F2);
-    app::InputSystem::createBinding<switch_skybox_action>(app::inputmap::method::F3);
     app::InputSystem::createBinding<auto_exposure_action>(app::inputmap::method::F4);
-    app::InputSystem::createBinding<reload_shaders_action>(app::inputmap::method::F5);
+    app::InputSystem::createBinding<exit_action>(app::inputmap::method::ESCAPE);
+    //app::InputSystem::createBinding<restart_action>(app::inputmap::method::F10);
+    //app::InputSystem::createBinding<escape_cursor_action>(app::inputmap::method::F9);
+    //app::InputSystem::createBinding<switch_skybox_action>(app::inputmap::method::F3);
+    //app::InputSystem::createBinding<reload_shaders_action>(app::inputmap::method::F5);
 
     app::InputSystem::createBinding<player_shoot>(app::inputmap::method::MOUSE_LEFT);
     app::InputSystem::createBinding<player_pitch>(app::inputmap::method::MOUSE_Y, 1.f);
@@ -357,14 +456,14 @@ void GameSystem::initInput()
     bindToEvent<player_shoot, &GameSystem::shoot>();
 
     bindToEvent<tonemap_action, &GameSystem::onTonemapSwitch>();
-    bindToEvent<switch_skybox_action, &GameSystem::onSkyboxSwitch>();
     bindToEvent<auto_exposure_action, &GameSystem::onAutoExposureSwitch>();
-    bindToEvent<reload_shaders_action, &GameSystem::onShaderReload>();
     bindToEvent<exit_action, &GameSystem::onExit>();
-    bindToEvent<restart_action, &GameSystem::onRestart>();
     bindToEvent<fullscreen_action, &GameSystem::onFullscreen>();
-    bindToEvent<escape_cursor_action, &GameSystem::onEscapeCursor>();
     bindToEvent<vsync_action, &GameSystem::onVSYNCSwap>();
+    //bindToEvent<switch_skybox_action, &GameSystem::onSkyboxSwitch>();
+    //bindToEvent<reload_shaders_action, &GameSystem::onShaderReload>();
+    //bindToEvent<restart_action, &GameSystem::onRestart>();
+    //bindToEvent<escape_cursor_action, &GameSystem::onEscapeCursor>();
 }
 
 void GameSystem::onGetCamera(lgn::time::span)

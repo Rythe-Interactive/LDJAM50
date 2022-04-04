@@ -45,14 +45,26 @@ protected:
     }
 
 public:
+    SphereCollider() noexcept
+        : CollisionShape(), m_radius(0.5f)
+    {
+        recalculateBounds();
+    }
 
-    NO_DTOR_RULE5_NOEXCEPT(SphereCollider);
+    SphereCollider(float _radius) noexcept
+        : CollisionShape(), m_radius(_radius)
+    {
+        recalculateBounds();
+    }
 
     SphereCollider(const math::vec3& _offset, const math::vec3& _scale, float _radius) noexcept
         : CollisionShape(_offset, _scale), m_radius(_radius)
     {
         recalculateBounds();
     }
+
+    MOVE_FUNCS_NOEXCEPT(SphereCollider);
+    COPY_FUNCS_NOEXCEPT(SphereCollider);
 
     virtual ~SphereCollider() noexcept = default;
 
@@ -81,13 +93,20 @@ protected:
     }
 
 public:
-    NO_DTOR_RULE5_NOEXCEPT(BoxCollider);
+    BoxCollider() noexcept
+        : CollisionShape(), m_size(math::vec3::one)
+    {
+        recalculateBounds();
+    }
 
     BoxCollider(const math::vec3& _offset, const math::vec3& _scale, math::vec3 _size) noexcept
         : CollisionShape(_offset, _scale), m_size(_size)
     {
         recalculateBounds();
     }
+
+    MOVE_FUNCS_NOEXCEPT(BoxCollider);
+    COPY_FUNCS_NOEXCEPT(BoxCollider);
 
     virtual ~BoxCollider() noexcept = default;
 

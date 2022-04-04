@@ -19,7 +19,7 @@ public:
 
     void checkCollisions(float deltaTime);
 
-    bool checkCollision(const collision_pair& pair);
+    bool checkCollision(const collision_pair& pair, collision& data);
 
     void integrateRigidbodies(float deltaTime);
 };

@@ -11,8 +11,6 @@
 #include "autogen_reflector_bounding_box.hpp"
 #include "autogen_prototype_collider.hpp"
 #include "autogen_reflector_collider.hpp"
-#include "autogen_prototype_collision_pair.hpp"
-#include "autogen_reflector_collision_pair.hpp"
 #include "autogen_prototype_bullet_comp.hpp"
 #include "autogen_reflector_bullet_comp.hpp"
 #include "autogen_prototype_player_comp.hpp"

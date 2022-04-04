@@ -122,10 +122,13 @@
     <ClInclude Include="broadphase\broadphase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="data\collision_pair.hpp">
+    <ClInclude Include="data\collision_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="data\simplex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debug_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

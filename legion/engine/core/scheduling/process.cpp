@@ -45,11 +45,18 @@ namespace legion::core::scheduling
             m_timebuffer += deltaTime;
 
             size_type iterations = 0;
-            while ((m_timebuffer >= m_interval) && (iterations < m_maxIterations))
+            while (m_timebuffer >= m_interval)
             {
                 m_operation(m_interval);
                 m_timebuffer -= m_interval;
                 iterations++;
+                if (iterations >= m_maxIterations)
+                    break;
+            }
+
+            if (m_timebuffer >= m_interval)
+            {
+                log::warn("Fixed time step process can't keep up with workload! buffer: {}s, interval: {}s", m_timebuffer, m_interval);
             }
         }
     }

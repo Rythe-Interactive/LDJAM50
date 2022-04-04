@@ -4,6 +4,7 @@
 #include "../renderstages/mousehover.hpp"
 #include "gui_test.hpp"
 
+#include "../data/collision_data.hpp"
 
 struct [[reflectable]] example_comp
 {
@@ -53,6 +54,8 @@ public:
     void vertical(player_vertical& axis);
     void thrust(player_thrust& axis);
     void shoot(player_shoot& action);
+
+    void onCollision(collision& event);
 
     void mouseOver();
     void initInput();

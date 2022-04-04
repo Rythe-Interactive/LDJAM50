@@ -48,7 +48,7 @@ namespace legion::core::serialization
                     if (!s_view.serialize(std::string(name), var.primitive.data, var.primitive.typeId))
                     {
                         s_view.end_object();
-                        return { legion_fs_error("Type was not a primitive serializable type."), warnings };
+                        return { common::success, warnings };// { legion_fs_error("Type was not a primitive serializable type."), warnings };
                     }
                 }
             }

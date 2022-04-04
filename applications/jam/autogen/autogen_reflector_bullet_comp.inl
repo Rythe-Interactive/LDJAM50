@@ -9,6 +9,13 @@ namespace legion::core
         reflector refl;
         refl.typeId = typeHash<::bullet_comp>();
         refl.typeName = "bullet_comp";
+        {
+            static const reflectable_attribute reflectable_attr{};
+            refl.attributes.push_back(std::cref(reflectable_attr));
+        }
+        refl.members.emplace("damge", member_reference("damge", primitive_reference{typeHash(obj.damge), &obj.damge}));
+        refl.members.emplace("lifetime", member_reference("lifetime", primitive_reference{typeHash(obj.lifetime), &obj.lifetime}));
+        refl.members.emplace("age", member_reference("age", primitive_reference{typeHash(obj.age), &obj.age}));
         refl.data = std::addressof(obj);
         return refl;
     }
@@ -19,6 +26,13 @@ namespace legion::core
         reflector refl;
         refl.typeId = typeHash<::bullet_comp>();
         refl.typeName = "bullet_comp";
+        {
+            static const reflectable_attribute reflectable_attr{};
+            refl.attributes.push_back(std::cref(reflectable_attr));
+        }
+        refl.members.emplace("damge", member_reference("damge", primitive_reference{typeHash(obj.damge), &obj.damge}));
+        refl.members.emplace("lifetime", member_reference("lifetime", primitive_reference{typeHash(obj.lifetime), &obj.lifetime}));
+        refl.members.emplace("age", member_reference("age", primitive_reference{typeHash(obj.age), &obj.age}));
         refl.data = reinterpret_cast<void*>(address);
         return refl;
     }

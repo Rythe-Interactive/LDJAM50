@@ -184,14 +184,13 @@ private:
     }
 };
 
-
 struct [[no_reflect]] const_simplex_iterator
 {
-    using value_type = const math::vec3;
+    using value_type = math::vec3;
     using difference_type = ptrdiff_t;
     using pointer = const math::vec3*;
     using reference = const math::vec3&;
-
+    using iterator_category = std::random_access_iterator_tag;
 private:
     const simplex* m_ptr;
     size_type m_idx;
@@ -216,8 +215,12 @@ public:
 
     constexpr L_ALWAYS_INLINE const_simplex_iterator& operator-=(const difference_type offset) noexcept { m_idx -= offset; return *this; }
     L_NODISCARD constexpr L_ALWAYS_INLINE const_simplex_iterator operator-(const difference_type offset) const noexcept { return const_simplex_iterator(m_ptr, m_idx - offset); }
+    L_NODISCARD constexpr L_ALWAYS_INLINE difference_type operator-(const const_simplex_iterator& other) const noexcept { return m_idx - other.m_idx; }
 
     L_NODISCARD constexpr L_ALWAYS_INLINE reference operator[](const difference_type offset) const noexcept { return m_ptr->at(m_idx + offset); }
+
+    L_NODISCARD constexpr L_ALWAYS_INLINE bool operator==(const const_simplex_iterator& other) const noexcept { return (m_idx == other.m_idx) && (m_ptr == other.m_ptr); }
+    L_NODISCARD constexpr L_ALWAYS_INLINE bool operator!=(const const_simplex_iterator& other) const noexcept { return !(*this == other); }
 };
 
 struct [[no_reflect]] simplex_iterator : public const_simplex_iterator
@@ -226,6 +229,7 @@ struct [[no_reflect]] simplex_iterator : public const_simplex_iterator
     using difference_type = ptrdiff_t;
     using pointer = math::vec3*;
     using reference = math::vec3&;
+    using iterator_category = std::random_access_iterator_tag;
 
     constexpr L_ALWAYS_INLINE simplex_iterator() noexcept : const_simplex_iterator() {}
 
@@ -245,8 +249,12 @@ struct [[no_reflect]] simplex_iterator : public const_simplex_iterator
 
     constexpr L_ALWAYS_INLINE simplex_iterator& operator-=(const ptrdiff_t offset) noexcept { const_simplex_iterator::operator-=(offset); return *this; }
     L_NODISCARD constexpr L_ALWAYS_INLINE simplex_iterator operator-(const ptrdiff_t offset) const noexcept { simplex_iterator tmp = *this; tmp -= offset; return tmp; }
+    L_NODISCARD constexpr L_ALWAYS_INLINE difference_type operator-(const const_simplex_iterator& other) const noexcept { return const_simplex_iterator::operator-(other); }
 
     L_NODISCARD constexpr L_ALWAYS_INLINE reference operator[](const ptrdiff_t offset) const noexcept { return const_cast<reference>(const_simplex_iterator::operator[](offset)); }
+
+    L_NODISCARD constexpr L_ALWAYS_INLINE bool operator==(const const_simplex_iterator& other) const noexcept { return const_simplex_iterator::operator==(other); }
+    L_NODISCARD constexpr L_ALWAYS_INLINE bool operator!=(const const_simplex_iterator& other) const noexcept { return const_simplex_iterator::operator!=(other); }
 };
 
 constexpr L_ALWAYS_INLINE typename simplex::iterator simplex::begin() noexcept { return iterator(this, 0); }

@@ -5,7 +5,7 @@
 
 using namespace lgn;
 
-struct collision_pair
+struct [[no_reflect]] collision_pair
 {
     ecs::entity                      first;
     math::vec3                       firstPosition;
@@ -19,7 +19,7 @@ struct collision_pair
     math::vec3                       secondScale;
     std::reference_wrapper<collider> secondCollider;
 
-    RULE_OF_5_NOEXCEPT(collision_pair);
+    NO_DEF_CTOR_RULE5_NOEXCEPT(collision_pair);
 
     collision_pair(
         const ecs::entity& _first,
@@ -44,4 +44,19 @@ struct collision_pair
         secondScale(_secondScale),
         secondCollider(_secondCollider)
     {}
+};
+
+struct [[no_reflect]] collision_normal
+{
+    math::vec3 axis;
+    float depth;
+};
+
+struct [[no_reflect]] collision : events::event<collision>
+{
+    ecs::entity first;
+    ecs::entity second;
+    pointer<collider> firstCollider;
+    pointer<collider> secondCollider;
+    collision_normal normal;
 };

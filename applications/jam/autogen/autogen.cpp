@@ -7,8 +7,6 @@
 #include "autogen_reflector_bounding_box.inl"
 #include "autogen_prototype_collider.inl"
 #include "autogen_reflector_collider.inl"
-#include "autogen_prototype_collision_pair.inl"
-#include "autogen_reflector_collision_pair.inl"
 #include "autogen_prototype_bullet_comp.inl"
 #include "autogen_reflector_bullet_comp.inl"
 #include "autogen_prototype_player_comp.inl"

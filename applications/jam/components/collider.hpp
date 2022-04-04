@@ -18,7 +18,7 @@ struct collider
         if (shapes.empty())
         {
             bounds.min = math::vec3(std::numeric_limits<float>::max());
-            bounds.max = math::vec3(std::numeric_limits<float>::min());
+            bounds.max = math::vec3(std::numeric_limits<float>::lowest());
         }
 
         shapes.push_back(std::make_unique<ShapeType>(std::forward<Args>(args)...));
