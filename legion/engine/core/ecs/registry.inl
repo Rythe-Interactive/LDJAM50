@@ -110,7 +110,7 @@ namespace legion::core::ecs
             // Update filters.
             FilterRegistry::markComponentAdd<ComponentType>(target);
             // Actually create and return the component.
-            return reinterpret_cast<component_pool<ComponentType>*>(getFamily(typeId))->create_component(target, std::forward<ComponentType>(value));
+            return reinterpret_cast<component_pool<ComponentType>*>(getFamily(typeId).ptr)->create_component(target, std::forward<ComponentType>(value));
         }
     }
 
@@ -138,7 +138,7 @@ namespace legion::core::ecs
             // Update filters.
             FilterRegistry::markComponentAdd<ComponentType>(target);
             // Actually create and return the component.
-            return reinterpret_cast<component_pool<ComponentType>*>(getFamily(typeId))->create_component(target, value);
+            return reinterpret_cast<component_pool<ComponentType>*>(getFamily(typeId).ptr)->create_component(target, value);
         }
     }
 

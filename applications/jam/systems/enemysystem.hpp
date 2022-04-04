@@ -12,8 +12,9 @@
 using namespace lgn;
 class EnemySystem final : public legion::System<EnemySystem>
 {
-    ecs::filter<enemy_comp> enemies;
-    bounds bnds{ 100.f,100.f, 5.f };
+    ecs::filter<position, rotation, scale, physics::rigidbody, enemy_comp> enemies;
+    ecs::filter<position, rotation, scale, physics::rigidbody, player_comp> players;
+    bounds bnds{ -25.f,25.f, 5.f };
 public:
     void setup();
     void update(lgn::time::span);
@@ -26,5 +27,6 @@ public:
     void alignment();
     void cohesion();
     void seperation();
+    void hunt();
 
 };

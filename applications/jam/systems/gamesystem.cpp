@@ -96,15 +96,18 @@ void GameSystem::setup()
     camera_ent.add_component<gfx::camera>(cam);
     player.add_child(camera_ent);
 
-    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-    for (size_type i = 0; i < 10; i++)
+    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamStealth.glb"));
+    for (size_type i = 0; i < 200; i++)
     {
         auto enemy = createEntity();
-        enemy.add_component<transform>();
+        auto [pos, rot, scal] = enemy.add_component<transform>();
+        scal = scale(.3f);
+        pos = math::sphericalRand(10.f);
         enemy.add_component<enemy_comp>();
         auto rb = enemy.add_component<physics::rigidbody>();
-        rb->addForce(math::vec3::forward * 10.f);
         enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        rb->linearDrag = 1.1f;
+        rb->setMass(.8f);
     }
 }
 
@@ -203,6 +206,7 @@ void GameSystem::shoot(player_shoot& action)
         {
             auto bullet = createEntity();
 
+            bullet.add_component<gfx::light>(gfx::light::point(math::colors::white, 5.f, 16.f));
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
             auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();

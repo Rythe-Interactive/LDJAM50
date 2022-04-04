@@ -3,6 +3,7 @@
 
 #include "../systems/gamesystem.hpp"
 #include "../systems/bulletsystem.hpp"
+#include "../systems/enemysystem.hpp"
 #include "../systems/gui_test.hpp"
 
 class GameModule : public legion::Module
@@ -23,6 +24,7 @@ public:
 
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
+        reportSystem<EnemySystem>();
         reportSystem<GuiTestSystem>();
     }
 };

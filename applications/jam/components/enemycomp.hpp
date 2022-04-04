@@ -6,9 +6,9 @@ struct enemy_comp
 {
     legion::core::id_type target = 0;
     float health = 100.f;
-    float visionRadius = 10.f;
-    float seperationRadius = 1.f;
-    float speed = 20.f;
-    legion::core::math::vec3 direction;
+    float visionRadius = 8.f;
+    float seperationRadius = 5.f;
+    float speed = 2.f;
+    legion::core::math::vec3 direction = legion::core::math::vec3::forward;
     std::vector<legion::core::id_type> neighbors;
 };
