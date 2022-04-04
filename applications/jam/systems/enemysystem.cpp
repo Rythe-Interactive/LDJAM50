@@ -1,4 +1,5 @@
 #include "enemysystem.hpp"
+#include "gui_test.hpp"
 
 void EnemySystem::setup()
 {
@@ -150,6 +151,8 @@ void EnemySystem::hunt()
             auto enemy_c = enemy.get_component<enemy_comp>();
             auto seperationRadius = enemy_c->playerSeperationRadius;
             auto huntRadius = enemy_c->playerHuntRadius;
+            //drawOrientedSphere(seperationRadius, math::compose(math::vec3::one, math::quat(), enemy.get_component<position>().get()), math::colors::red);
+            drawOrientedSphere(huntRadius, math::compose(math::vec3::one, math::quat(), enemy.get_component<position>().get()), math::colors::green);
             if (math::length(diff) < huntRadius)
             {
                 enemy_c->direction += diff;

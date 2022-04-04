@@ -84,7 +84,7 @@ void GameSystem::setup()
     player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
     auto [pos, rot, scal] = player.add_component<transform>();
     player.add_component<player_comp>();
-    auto rb = player.add_component<physics::rigidbody>();
+    auto rb = player.add_component<rigidbody>();
     rb->linearDrag = .8f;
     rb->setMass(.1f);
 
@@ -97,7 +97,7 @@ void GameSystem::setup()
     player.add_child(camera_ent);
 
     model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-    for (size_type i = 0; i < 200; i++)
+    for (size_type i = 0; i < 5; i++)
     {
         auto enemy = createEntity();
         auto [pos, rot, scal] = enemy.add_component<transform>();
