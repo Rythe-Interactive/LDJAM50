@@ -246,7 +246,6 @@ namespace legion::core
             auto randpoint = math::diskRand(math::atan(45.f));
             steering += math::normalize(vel + rot * math::vec3(randpoint.x, randpoint.y, 0.f)) * speed;
             vel = math::clamp(math::lerp(vel, steering, deltaTime), -velocity{ 5.f }, velocity{ 5.f });
-            steering = math::normalize(vel);
             rot = math::quatLookAt(math::normalize(vel), math::vec3::up);
             pos += vel * speed * deltaTime;
             steering = vel;

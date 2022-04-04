@@ -95,6 +95,17 @@ void GameSystem::setup()
     cam.set_projection(60.f, 0.001f, 1000.f);
     camera_ent.add_component<gfx::camera>(cam);
     player.add_child(camera_ent);
+
+    model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
+    for (size_type i = 0; i < 10; i++)
+    {
+        auto enemy = createEntity();
+        enemy.add_component<transform>();
+        enemy.add_component<enemy_comp>();
+        auto rb = enemy.add_component<physics::rigidbody>();
+        rb->addForce(math::vec3::forward * 10.f);
+        enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+    }
 }
 
 void GameSystem::update(legion::time::span deltaTime)
@@ -143,7 +154,7 @@ void GameSystem::yaw(player_yaw& axis)
     for (auto& ent : playerFilter)
     {
         rotation& rot = ent.get_component<rotation>();
-        rot *= math::angleAxis(axis.value * axis.input_delta* radialMovement, math::vec3::up);
+        rot *= math::angleAxis(axis.value * axis.input_delta * radialMovement, math::vec3::up);
     }
 }
 void GameSystem::strafe(player_strafe& axis)

@@ -21,7 +21,6 @@ public:
             0
         );
 
-        reportSystem<physics::PhysicsSystem>();
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
         reportSystem<GuiTestSystem>();
