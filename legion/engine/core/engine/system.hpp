@@ -84,7 +84,9 @@ namespace legion::core
         friend class legion::core::Module;
     protected:
         template <void(SelfType::* func_type)(time::span), size_type charc>
-        id_type createProcess(const char(&processChainName)[charc], time::span interval = 0);
+        id_type createProcess(const char(&processChainName)[charc]);
+        template <void(SelfType::* func_type)(time::span), size_type charc>
+        id_type createProcess(const char(&processChainName)[charc], time::span interval, size_type maxIterationsPerFrame = 5);
 
         /**@brief Link a function to an event type in order to get notified whenever one gets raised.
          * @tparam event_type Event type to subscribe to.
