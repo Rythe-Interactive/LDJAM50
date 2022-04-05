@@ -11,6 +11,7 @@ class EnemySystem final : public legion::System<EnemySystem>
     ecs::filter<position, rotation, scale, rigidbody, player_comp> players;
     bounding_box bnds{ math::vec3(-500.f), math::vec3(500.f)};
     float border = 5.f;
+    size_type bulletCount = 0;
 public:
     void setup();
     void update(lgn::time::span);

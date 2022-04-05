@@ -71,7 +71,7 @@ void GameSystem::setup()
         material.set_param("useMetallicTex", true);
 
 
-        auto player = createEntity("Player");
+ 		auto player = createEntity("Player");
         player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         auto [pos, rot, scal] = player.add_component<transform>();
         player.add_component<audio::audio_listener>();
@@ -79,6 +79,8 @@ void GameSystem::setup()
         auto rb = player.add_component<rigidbody>();
         rb->linearDrag = .8f;
         rb->setMass(.1f);
+
+        player.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("LaserShot"));
 
         auto camera_ent = createEntity("Camera");
         camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
@@ -311,18 +313,20 @@ void GameSystem::shoot(player_shoot& action)
             auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::yellow, 5.f, 8.f)).get();
             auto& e_pos = ent.get_component<position>().get();
             auto& e_rot = ent.get_component<rotation>().get();
-            auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
+            auto& b_pos = bullet.add_component<position>().get();
+            auto& b_rot = bullet.add_component<rotation>().get();
+            auto& b_scal = bullet.add_component<scale>().get();
             b_pos = e_pos.xyz() + e_rot.forward() * .5f;
-            b_rot = e_rot;
-            b_scal = scale(.1f, .1f, 1.f);
+            b_rot = b_rot.forward();
+            b_scal = scale(1.f);
+
+            ent.get_component<audio::audio_source>()->play();
 
             auto model = gfx::ModelCache::get_handle("Bullet");
             auto material = gfx::MaterialCache::get_material("PlayerLight");
             material.set_param("color", math::colors::yellow);
             material.set_param("intensity", 2.f);
             bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-            auto source = bullet.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("LaserShot"));
-            source->play();
             bullet.add_component<bullet_comp>();
             auto shootDir = ent.get_component<rotation>()->forward();
             auto p_vel = ent.get_component<rigidbody>()->velocity;
