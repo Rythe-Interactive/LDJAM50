@@ -170,10 +170,35 @@ void GameSystem::setup()
     }
 
     bindToEvent<collision, &GameSystem::onCollision>();
+    timeSinceStart.start();
 }
 
 void GameSystem::onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime)
 {
+    using namespace imgui;
+
+    auto windowSize = context.framebufferSize();
+
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::SetNextWindowPos({ 0,0 });
+    ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
+
+    ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoMouseInputs);
+
+    auto* imwindow = ImGui::GetCurrentWindow();
+
+    imwindow->FontWindowScale = 2.f;
+
+    ImGui::Text("SCORE: %d", static_cast<int>(timeSinceStart.elapsed_time().seconds()));
+
+    //ImGui::SameLine();
+    //std::string hi = "HIGH: " + std::to_string(highscore);
+    //ImVec2 textSize = ImGui::CalcTextSize(hi.c_str());
+    //ImGuiStyle& style = ImGui::GetStyle();
+    //ImGui::SetCursorPosX(width - textSize.x - style.ItemSpacing.x);
+    //ImGui::Text(hi.c_str());
+    ImGui::End();
+
 }
 
 void GameSystem::pitch(player_pitch& axis)
