@@ -74,7 +74,7 @@ void EnemySystem::locomotion(float deltaTime)
             if (ent2 == ent)
                 continue;
 
-            if (math::length(ent2.get_component<position>().get() - pos) < enemy.visionRadius)
+            if (math::length2(ent2.get_component<position>().get() - pos) < enemy.visionRadius * enemy.visionRadius)
             {
                 enemy.neighbors.push_back(ent2->id);
             }
@@ -150,7 +150,7 @@ void EnemySystem::seperation()
         {
             auto& neighborPos = ecs::Registry::getEntity(enemy.neighbors[neighbor]).get_component<position>().get();
             auto diff = (pos - neighborPos).xyz();
-            if (math::length(diff) < enemy.seperationRadius)
+            if (math::length2(diff) < enemy.seperationRadius * enemy.seperationRadius)
                 force += enemy.seperationRadius / diff;
         }
         steering += force / neighborCount;
@@ -161,48 +161,49 @@ void EnemySystem::hunt(float deltaTime)
     for (auto& player : players)
     {
         auto playerPos = player.get_component<position>().get();
-        bnds.set_origin(player.get_component<position>().get());
-        debug::drawCube(bnds.min, bnds.max);
+        bnds.set_origin(playerPos);
+
         for (auto& enemy : enemies)
         {
-            auto diff = enemy.get_component<position>().get() - player.get_component<position>().get();
-            auto enemy_c = enemy.get_component<enemy_comp>();
-            enemy_c->elapsedTime += deltaTime;
-            auto seperationRadius = enemy_c->playerSeperationRadius;
-            auto huntRadius = enemy_c->playerHuntRadius;
-            if (math::length(diff) < huntRadius && !enemy_c->running)
+            auto diff = enemy.get_component<position>().get() - playerPos;
+            auto& enemy_c = enemy.get_component<enemy_comp>().get();
+            enemy_c.elapsedTime += deltaTime;
+            auto seperationRadius = enemy_c.playerSeperationRadius * enemy_c.playerSeperationRadius;
+            auto huntRadius = enemy_c.playerHuntRadius * enemy_c.playerHuntRadius;
+            if (math::length2(diff) < huntRadius && !enemy_c.running)
             {
-                enemy_c->hunt = true;
+                enemy_c.hunt = true;
             }
 
-            if (math::length(diff) < seperationRadius && enemy_c->hunt)
+            if (math::length2(diff) < seperationRadius && enemy_c.hunt)
             {
-                enemy_c->hunt = false;
-                enemy_c->running = true;
+                enemy_c.hunt = false;
+                enemy_c.running = true;
             }
 
-            if (math::length(diff) > huntRadius)
+            if (math::length2(diff) > huntRadius)
             {
-                enemy_c->hunt = false;
-                enemy_c->running = false;
+                enemy_c.hunt = false;
+                enemy_c.running = false;
             }
 
-            if (enemy_c->hunt)
+            if (enemy_c.hunt)
             {
-                enemy_c->direction = math::normalize(-diff) * enemy_c->speed * 5.f;
+                enemy_c.direction = math::normalize(-diff) * enemy_c.speed * 5.f;
                 if (180.f - math::rad2deg(math::angleBetween(enemy.get_component<rotation>()->forward(), math::normalize(diff))) < 15.f)
-                    if (enemy_c->elapsedTime > enemy_c->shootInterval)
+                    if (enemy_c.elapsedTime > enemy_c.shootInterval)
                     {
                         shoot(enemy);
-                        enemy_c->elapsedTime = 0.f;
+                        enemy_c.elapsedTime = 0.f;
                     }
             }
 
-            if (enemy_c->running)
-                enemy_c->direction += seperationRadius / diff;
+            if (enemy_c.running)
+                enemy_c.direction += seperationRadius / diff;
         }
     }
 }
+
 void EnemySystem::shoot(ecs::entity enemy)
 {
     using namespace lgn;
@@ -223,12 +224,13 @@ void EnemySystem::shoot(ecs::entity enemy)
     material.set_param("intensity", 2.f);
     bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
 
-    bullet.add_component<bullet_comp>();
-    auto shootDir = enemy.get_component<rotation>()->forward();
+    bullet.add_component<bullet_comp>()->fromPlayer = false;
     auto p_vel = enemy.get_component<rigidbody>()->velocity;
     auto& b_rb = bullet.add_component<rigidbody>().get();
     b_rb.velocity = p_vel;
-    //b_rb.addForce(shootDir * 800.f);
     b_rb.setMass(.1f);
+
+    auto& col = bullet.add_component<collider>().get();
+    col.add_shape<SphereCollider>();
 }
 

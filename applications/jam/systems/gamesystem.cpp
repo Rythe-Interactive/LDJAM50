@@ -330,7 +330,10 @@ void GameSystem::onCollision(collision& event)
         }
         else if (other.has_component<enemy_comp>())
         {
-            enemy_comp& enemyComp = other.get_component<enemy_comp>();
+            if (!bulletComp.fromPlayer)
+                return;
+
+            enemy_comp& enemyComp = other.get_component<enemy_comp>().get();
             enemyComp.health -= bulletComp.damge;
 
             log::debug("enemy {} health: {}", other->name, enemyComp.health);
