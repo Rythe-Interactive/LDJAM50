@@ -53,11 +53,6 @@ namespace legion::core::scheduling
                 if (iterations >= m_maxIterations)
                     break;
             }
-
-            if (m_timebuffer >= m_interval)
-            {
-                log::warn("Fixed time step process can't keep up with workload! buffer: {}s, interval: {}s", m_timebuffer, m_interval);
-            }
         }
     }
 }

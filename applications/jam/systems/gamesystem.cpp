@@ -40,34 +40,72 @@ void GameSystem::setup()
 
     gfx::ModelCache::create_model("Particle", fs::view("assets://models/billboard.glb"));
     gfx::ModelCache::create_model("Bullet", fs::view("assets://models/sphere.obj"));
-    auto material = gfx::MaterialCache::create_material("BulletMat", fs::view("assets://shaders/texture.shs"));
-    material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
 
-    audio::AudioSegmentCache::createAudioSegment("Explosion", fs::view("assets://audio/fx/Explosion2.wav"));
-    audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
-    audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
+    {
+        auto material = gfx::MaterialCache::create_material("BulletMat", fs::view("assets://shaders/texture.shs"));
+        material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
 
-    initInput();
+        audio::AudioSegmentCache::createAudioSegment("Explosion", fs::view("assets://audio/fx/Explosion2.wav"));
+        audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
+        audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
 
-    material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
-    material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
-    auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
-    material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
-    texture_import_settings settings = gfx::default_texture_settings;
-    settings.mag = gfx::texture_mipmap::nearest;
-    auto color = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/ColorPalette.png"), settings);
-    auto emissive = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/EmissivePallete.png"), settings);
-    auto metallic = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/MetallicPalette.png"), settings);
-    auto roughness = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/RoughnessPalette.png"), settings);
-    material.set_param("albedoTex", color);
-    material.set_param("useAlbedoTex", true);
-    material.set_param("emissiveTex", emissive);
-    material.set_param("useEmissiveTex", true);
-    material.set_param("roughnessTex", roughness);
-    material.set_param("useRoughnessTex", true);
-    material.set_param("metallicTex", metallic);
-    material.set_param("useMetallicTex", true);
+        initInput();
 
+        material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
+        material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
+        auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
+        material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
+        texture_import_settings settings = gfx::default_texture_settings;
+        settings.mag = gfx::texture_mipmap::nearest;
+        auto color = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/ColorPalette.png"), settings);
+        auto emissive = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/EmissivePallete.png"), settings);
+        auto metallic = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/MetallicPalette.png"), settings);
+        auto roughness = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/RoughnessPalette.png"), settings);
+        material.set_param("albedoTex", color);
+        material.set_param("useAlbedoTex", true);
+        material.set_param("emissiveTex", emissive);
+        material.set_param("useEmissiveTex", true);
+        material.set_param("roughnessTex", roughness);
+        material.set_param("useRoughnessTex", true);
+        material.set_param("metallicTex", metallic);
+        material.set_param("useMetallicTex", true);
+
+
+        auto player = createEntity("Player");
+        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        auto [pos, rot, scal] = player.add_component<transform>();
+        player.add_component<audio::audio_listener>();
+        player.add_component<player_comp>();
+        auto rb = player.add_component<rigidbody>();
+        rb->linearDrag = .8f;
+        rb->setMass(.1f);
+
+        auto camera_ent = createEntity("Camera");
+        camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
+        rendering::camera cam;
+        cam.set_projection(60.f, 0.001f, 1000.f);
+        camera_ent.add_component<gfx::camera>(cam);
+        player.add_child(camera_ent);
+        auto col = player.add_component<collider>();
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
+
+        model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
+        for (size_type i = 0; i < 200; i++)
+        {
+            auto asteroid = createEntity("Asteroid" + std::to_string(i));
+            auto [pos, rot, scal] = asteroid.add_component<transform>();
+            scal = scale(1.f) * math::linearRand(1.f, 2.f);
+            rot = rotation(math::sphericalRand(1.f));
+            pos = math::ballRand(500.f);
+            asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+            auto col = asteroid.add_component<collider>();
+            col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.f);
+
+            auto rb = asteroid.add_component<rigidbody>();
+            rb->setMass(15.f);
+
+        }
+    }
 
     std::vector<fs::view> textures;
     {
@@ -112,68 +150,19 @@ void GameSystem::setup()
     emitter->add_policy<scale_lifetime_policy>();
     emitter->add_policy<flipbook_policy>();
 
-    //Create Player
-    {
-        auto player = createEntity("Player");
-        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-        auto [pos, rot, scal] = player.add_component<transform>();
-        player.add_component<audio::audio_listener>();
-        player.add_component<player_comp>();
-        auto rb = player.add_component<rigidbody>();
-        rb->linearDrag = .8f;
-        rb->setMass(.1f);
-
-        auto camera_ent = createEntity("Camera");
-        camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
-        rendering::camera cam;
-        cam.set_projection(60.f, 0.001f, 1000.f);
-        camera_ent.add_component<gfx::camera>(cam);
-        player.add_child(camera_ent);
-        auto col = player.add_component<collider>();
-        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
-    }
-
     //SpawnEnemies
     {
-        model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-        for (size_type i = 0; i < 300; i++)
+        for (size_type i = 0; i < 30; i++)
         {
-            auto enemy = createEntity("Enemy" + std::to_string(i));
-            auto [pos, rot, scal] = enemy.add_component<transform>();
-            scal = scale(.3f);
-            pos = math::sphericalRand(70.f);
-            enemy.add_component<enemy_comp>();
-            auto rb = enemy.add_component<rigidbody>();
-            enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-            rb->linearDrag = 1.1f;
-            rb->setMass(.8f);
-            auto col = enemy.add_component<collider>();
-            col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
+            spawnEnemy();
         }
-    }
-
-    for (size_type i = 0; i < 20; i++)
-    {
-        auto asteroid = createEntity("Asteroid" + std::to_string(i));
-        auto [pos, rot, scal] = asteroid.add_component<transform>();
-        scal = scale(1.f) * math::linearRand(1.f, 2.f);
-        rot = rotation(math::sphericalRand(1.f));
-        pos = math::ballRand(100.f);
-        model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
-        asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-        auto col = asteroid.add_component<collider>();
-        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.f);
-
-        auto rb = asteroid.add_component<rigidbody>();
-        rb->setMass(15.f);
-
     }
 
     bindToEvent<collision, &GameSystem::onCollision>();
     timeSinceStart.start();
 }
 
-void GameSystem::onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime)
+void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_MAYBEUNUSED const gfx::camera::camera_input& camInput, time::span deltaTime)
 {
     using namespace imgui;
 
@@ -191,14 +180,38 @@ void GameSystem::onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, con
 
     ImGui::Text("SCORE: %d", static_cast<int>(timeSinceStart.elapsed_time().seconds()));
 
-    //ImGui::SameLine();
-    //std::string hi = "HIGH: " + std::to_string(highscore);
-    //ImVec2 textSize = ImGui::CalcTextSize(hi.c_str());
-    //ImGuiStyle& style = ImGui::GetStyle();
-    //ImGui::SetCursorPosX(width - textSize.x - style.ItemSpacing.x);
-    //ImGui::Text(hi.c_str());
+
+    static float timeBuffer = 0.f;
+    static float spawninterval = 15.f;
+    timeBuffer += deltaTime;
+
+    if (timeBuffer > spawninterval)
+    {
+        timeBuffer -= spawninterval;
+        spawninterval *= 0.95f;
+        spawnEnemy();
+    }
+
     ImGui::End();
 
+}
+
+void GameSystem::spawnEnemy()
+{
+    static size_type i = 0;
+    static auto model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
+    static auto material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
+    auto enemy = createEntity("Enemy" + std::to_string(i++));
+    auto [pos, rot, scal] = enemy.add_component<transform>();
+    scal = scale(1.f);
+    pos = math::sphericalRand(70.f);
+    enemy.add_component<enemy_comp>();
+    auto rb = enemy.add_component<rigidbody>();
+    enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+    rb->linearDrag = 1.1f;
+    rb->setMass(.8f);
+    auto col = enemy.add_component<collider>();
+    col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
 }
 
 void GameSystem::pitch(player_pitch& axis)
@@ -330,8 +343,8 @@ void GameSystem::onCollision(collision& event)
     //    event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
     //    event.normal.axis, event.normal.depth);
 
-    ecs::entity other;
-    ecs::entity bullet;
+    ecs::entity other{ nullptr };
+    ecs::entity bullet{ nullptr };
 
     if (event.first.has_component<bullet_comp>())
     {
@@ -364,7 +377,10 @@ void GameSystem::onCollision(collision& event)
             log::debug("enemy {} health: {}", other->name, enemyComp.health);
 
             if (enemyComp.health <= 0.f)
+            {
                 other.destroy();
+                return;
+            }
         }
     }
 

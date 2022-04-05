@@ -9,7 +9,7 @@ class EnemySystem final : public legion::System<EnemySystem>
 {
     ecs::filter<position, rotation, scale, rigidbody, enemy_comp> enemies;
     ecs::filter<position, rotation, scale, rigidbody, player_comp> players;
-    bounding_box bnds{ math::vec3(-100.f), math::vec3(100.f)};
+    bounding_box bnds{ math::vec3(-500.f), math::vec3(500.f)};
     float border = 5.f;
 public:
     void setup();

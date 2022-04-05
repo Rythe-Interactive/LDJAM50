@@ -43,7 +43,9 @@ public:
 
     void setup();
 
-    void onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime);
+    void onGUI(app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, time::span deltaTime);
+
+    void spawnEnemy();
 
     void pitch(player_pitch& axis);
     void roll(player_roll& axis);
