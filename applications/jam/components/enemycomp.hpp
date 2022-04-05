@@ -5,7 +5,7 @@
 struct [[reflectable]] enemy_comp
 {
     legion::core::id_type target = 0;
-    float health = 100.f;
+    float health = 10.f;
     float visionRadius = 6.f;
     float playerHuntRadius = 40.f;
     float playerSeperationRadius = 4.f;
