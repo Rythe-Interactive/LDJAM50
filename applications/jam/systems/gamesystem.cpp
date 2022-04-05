@@ -138,7 +138,7 @@ void GameSystem::setup()
         model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
         for (size_type i = 0; i < 300; i++)
         {
-            auto enemy = createEntity();
+            auto enemy = createEntity("Enemy" + std::to_string(i));
             auto [pos, rot, scal] = enemy.add_component<transform>();
             scal = scale(.3f);
             pos = math::sphericalRand(70.f);
@@ -300,10 +300,10 @@ void GameSystem::shoot(player_shoot& action)
 
 void GameSystem::onCollision(collision& event)
 {
-    log::debug("Collision between {} and {}, with normal {}, and depth {}",
-        event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
-        event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
-        event.normal.axis, event.normal.depth);
+    //log::debug("Collision between {} and {}, with normal {}, and depth {}",
+    //    event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
+    //    event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
+    //    event.normal.axis, event.normal.depth);
 
     ecs::entity other;
     ecs::entity bullet;

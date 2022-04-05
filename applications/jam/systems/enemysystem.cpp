@@ -208,7 +208,7 @@ void EnemySystem::shoot(ecs::entity enemy)
 {
     using namespace lgn;
 
-    auto bullet = createEntity();
+    auto bullet = createEntity("EnemyBullet");
 
     auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::red, 2.f, 5.f)).get();
     auto& e_pos = enemy.get_component<position>().get();
