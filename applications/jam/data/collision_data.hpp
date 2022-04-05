@@ -8,40 +8,34 @@ using namespace lgn;
 struct [[no_reflect]] collision_pair
 {
     ecs::entity                      first;
-    math::vec3                       firstPosition;
-    math::quat                       firstRotation;
-    math::vec3                       firstScale;
+    math::mat4                       firstTransf;
+    math::mat3                       firstInvRot;
     std::reference_wrapper<collider> firstCollider;
 
     ecs::entity                      second;
-    math::vec3                       secondPosition;
-    math::quat                       secondRotation;
-    math::vec3                       secondScale;
+    math::mat4                       secondTransf;
+    math::mat3                       secondInvRot;
     std::reference_wrapper<collider> secondCollider;
 
     NO_DEF_CTOR_RULE5_NOEXCEPT(collision_pair);
 
     collision_pair(
         const ecs::entity& _first,
-        const math::vec3& _firstPosition,
-        const math::quat& _firstRotation,
-        const math::vec3& _firstScale,
+        const math::mat4& _firstTransf,
+        const math::mat3& _firstInvRot,
         const std::reference_wrapper<collider>& _firstCollider,
         const ecs::entity& _second,
-        const math::vec3& _secondPosition,
-        const math::quat& _secondRotation,
-        const math::vec3& _secondScale,
+        const math::mat4& _secondTransf,
+        const math::mat3& _secondInvRot,
         const std::reference_wrapper<collider>& _secondCollider)
         :
         first(_first),
-        firstPosition(_firstPosition),
-        firstRotation(_firstRotation),
-        firstScale(_firstScale),
+        firstTransf(_firstTransf),
+        firstInvRot(_firstInvRot),
         firstCollider(_firstCollider),
         second(_second),
-        secondPosition(_secondPosition),
-        secondRotation(_secondRotation),
-        secondScale(_secondScale),
+        secondTransf(_secondTransf),
+        secondInvRot(_secondInvRot),
         secondCollider(_secondCollider)
     {}
 };

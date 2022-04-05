@@ -31,10 +31,8 @@ class BruteForce final : public BroadPhase
             auto& first = m_colliderQuery[i];
             collidable firstCollidable = first.get_component<collidable>();
 
-            math::vec3 firstPosition;
-            math::quat firstRotation;
-            math::vec3 firstScale;
-            math::decompose(firstCollidable.to_world_matrix(), firstScale, firstRotation, firstPosition);
+            math::mat4 firstTransf = firstCollidable.to_world_matrix();
+            math::mat3 firstInvRot = math::mat3_cast(math::inverse(firstCollidable.get<rotation>()));
 
             auto& firstCollider = firstCollidable.get<collider>();
 
@@ -42,11 +40,10 @@ class BruteForce final : public BroadPhase
             {
                 auto& second = m_colliderQuery[j];
                 collidable secondCollidable = second.get_component<collidable>();
-                math::vec3 secondPosition;
-                math::quat secondRotation;
-                math::vec3 secondScale;
-                math::decompose(secondCollidable.to_world_matrix(), secondScale, secondRotation, secondPosition);
-                pairs.emplace_back(first, firstPosition, firstRotation, firstScale, std::ref(firstCollider), second, secondPosition, secondRotation, secondScale, std::ref(secondCollidable.get<collider>()));
+                math::mat4 secondTransf = secondCollidable.to_world_matrix();
+                math::mat3 secondInvRot = math::mat3_cast(math::inverse(secondCollidable.get<rotation>()));
+
+                pairs.emplace_back(first, firstTransf, firstInvRot, std::ref(firstCollider), second, secondTransf, secondInvRot, std::ref(secondCollidable.get<collider>()));
             }
         }
     }
@@ -59,9 +56,8 @@ class SpacialHash final : public BroadPhase
     struct [[no_reflect]] collidable_data
     {
         ecs::entity ent;
-        math::vec3 position;
-        math::quat rotation;
-        math::vec3 scale;
+        math::mat4 transf;
+        math::mat3 invRot;
         pointer<collider> coll;
     };
 
@@ -145,21 +141,17 @@ class SpacialHash final : public BroadPhase
         {
             collidable_data data;
             data.ent = m_colliderQuery[i];
-            collidable collidableArch = data.ent.get_component<collidable>();
+            collidable collidableArch = data.ent.get_component<position, rotation, scale, collider>();
 
-            math::mat4 worldMat = collidableArch.to_world_matrix();
-            math::decompose(worldMat, data.scale, data.rotation, data.position);
-
-            if (checkNan(data.position) || checkNan(data.rotation) || checkNan(data.scale))
-                continue;
-
+            data.transf = collidableArch.to_world_matrix();
+            data.invRot = math::mat3_cast(math::inverse(collidableArch.get<rotation>()));
             data.coll = { &collidableArch.get<collider>() };
 
             std::array<math::vec3, 8> verts;
             data.coll->bounds.get_verts(verts);
 
             for (auto& vert : verts)
-                vert = (worldMat * math::vec4(vert, 1.f)).xyz();
+                vert = (data.transf * math::vec4(vert, 1.f)).xyz();
 
             bounding_box worldBounds;
             worldBounds.min = math::vec3(std::numeric_limits<float>::max());
@@ -194,10 +186,8 @@ class SpacialHash final : public BroadPhase
                     id_type pairHash = getPairHash(first.ent, second.ent);
                     if (!m_knownPairs.count(pairHash))
                     {
-                        log::debug("pair {} {}", first.ent->name, second.ent->name);
-
                         m_knownPairs.emplace(pairHash);
-                        pairs.emplace_back(first.ent, first.position, first.rotation, first.scale, std::ref(*first.coll), second.ent, second.position, second.rotation, second.scale, std::ref(*second.coll));
+                        pairs.emplace_back(first.ent, first.transf, first.invRot, std::ref(*first.coll), second.ent, second.transf, second.invRot, std::ref(*second.coll));
                     }
                 }
             }

@@ -212,14 +212,14 @@ void EnemySystem::shoot(ecs::entity enemy)
     bulletCount++;
 
     auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::red, 2.f, 5.f)).get();
-    auto& e_pos = enemy.get_component<position>().get();
-    auto& e_rot = enemy.get_component<rotation>().get();
+    auto e_pos = enemy.get_component<position>().get();
+    auto e_rot = enemy.get_component<rotation>().get();
 
     auto& b_pos = bullet.add_component<position>().get();
     auto& b_rot = bullet.add_component<rotation>().get();
     auto& b_scal = bullet.add_component<scale>().get();
     b_pos = e_pos.xyz() + e_rot.forward() * .5f;
-    b_rot = b_rot.forward();
+    b_rot = e_rot;
     b_scal = scale(1.f);
 
     auto model = gfx::ModelCache::get_handle("Bullet");
@@ -232,9 +232,12 @@ void EnemySystem::shoot(ecs::entity enemy)
     auto p_vel = enemy.get_component<rigidbody>()->velocity;
     auto& b_rb = bullet.add_component<rigidbody>().get();
     b_rb.velocity = p_vel;
+    b_rb.addForce(e_rot.forward() * 800.f);
     b_rb.setMass(.1f);
 
     auto& col = bullet.add_component<collider>().get();
+    col.layer = 2;
+    col.ignoreMask = 1 | 2;
     col.add_shape<SphereCollider>();
 }
 

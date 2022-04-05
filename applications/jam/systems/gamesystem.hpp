@@ -36,7 +36,7 @@ class GameSystem final : public legion::System<GameSystem>
 public:
     lgn::ecs::entity camera;
     bool escaped = false;
-    float linearMovement = 75.f;
+    float linearMovement = 150.f;
     float radialMovement = 500.f;
 
     time::timer timeSinceStart;

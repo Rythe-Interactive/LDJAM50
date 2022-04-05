@@ -86,13 +86,13 @@ void addIfUniqueEdge(std::vector<math::vec<2, size_type>>& edges, const std::vec
 }
 
 static math::vec3 calculateSupportPoint(
-    collider& firstCollider, const math::vec3& firstCenter, const math::vec3& firstPos, const math::mat3& firstRot, const math::mat3& firstInvRot, const math::vec3& firstScale,
-    collider& secondCollider, const math::vec3& secondCenter, const math::vec3& secondPos, const math::mat3& secondRot, const math::mat3& secondInvRot, const math::vec3& secondScale,
+    collider& firstCollider, const math::vec3& firstCenter, const math::mat4& firstTransf, const math::mat3& firstInvRot,
+    collider& secondCollider, const math::vec3& secondCenter, const math::mat4& secondTransf, const math::mat3& secondInvRot,
     const math::vec3& direction)
 {
     math::vec3 firstSupport = firstCenter;
     float furthestDist2 = 0.f;
-    math::vec3 dir = direction;
+    math::vec3 dir = firstInvRot * direction;
 
     for (auto& shape : firstCollider.shapes)
     {
@@ -104,11 +104,11 @@ static math::vec3 calculateSupportPoint(
             furthestDist2 = supportDist2;
         }
     }
-    firstSupport = firstPos + (firstRot * (firstSupport * firstScale));
+    firstSupport = (firstTransf * math::vec4(firstSupport, 1.f)).xyz();
 
     math::vec3 secondSupport = secondCenter;
     furthestDist2 = 0.f;
-    dir = -direction;
+    dir = secondInvRot * (-direction);
 
     for (auto& shape : secondCollider.shapes)
     {
@@ -120,20 +120,20 @@ static math::vec3 calculateSupportPoint(
             furthestDist2 = supportDist2;
         }
     }
-    secondSupport = secondPos + (secondRot * (secondSupport * secondScale));
+    secondSupport = (secondTransf * math::vec4(secondSupport, 1.f)).xyz();
 
     return firstSupport - secondSupport;
 }
 
 
 static float calculateCollision(
-    collider& firstCollider, const math::vec3& firstCenter, const math::vec3& firstPos, const math::quat& firstRot, const math::vec3& firstScale,
-    collider& secondCollider, const math::vec3& secondCenter, const math::vec3& secondPos, const math::quat& secondRot, const math::vec3& secondScale,
+    collider& firstCollider, const math::vec3& firstCenter, const math::mat4& firstTransf, const math::mat3& firstInvRot,
+    collider& secondCollider, const math::vec3& secondCenter, const math::mat4& secondTransf, const math::mat3& secondInvRot,
     const math::vec3& direction)
 {
     math::vec3 firstSupport = firstCenter;
     float furthestDist2 = 0.f;
-    math::vec3 dir = direction;
+    math::vec3 dir = firstInvRot * direction;
 
     for (auto& shape : firstCollider.shapes)
     {
@@ -145,11 +145,11 @@ static float calculateCollision(
             furthestDist2 = supportDist2;
         }
     }
-    firstSupport = (math::compose(firstScale, math::quat(), firstPos) * math::vec4(firstSupport, 1.f)).xyz();
+    firstSupport = (firstTransf * math::vec4(firstSupport, 1.f)).xyz();
 
     math::vec3 secondSupport = secondCenter;
     furthestDist2 = 0.f;
-    dir = -direction;
+    dir = secondInvRot * (-direction);
 
     for (auto& shape : secondCollider.shapes)
     {
@@ -161,22 +161,22 @@ static float calculateCollision(
             furthestDist2 = supportDist2;
         }
     }
-    secondSupport = (math::compose(secondScale, math::quat(), secondPos) * math::vec4(secondSupport, 1.f)).xyz();
+    secondSupport = (secondTransf * math::vec4(secondSupport, 1.f)).xyz();
 
     return math::dot(firstSupport - secondSupport, direction);
 }
 
 
 static bool getCollisionNormal(
-    collider& firstCollider, const math::vec3& firstCenter, const math::vec3& firstPos, const math::mat3& firstRot, const math::mat3& firstInvRot, const math::vec3& firstScale,
-    collider& secondCollider, const math::vec3& secondCenter, const math::vec3& secondPos, const math::mat3& secondRot, const math::mat3& secondInvRot, const math::vec3& secondScale,
+    collider& firstCollider, const math::vec3& firstCenter, const math::mat4& firstTransf, const math::mat3& firstInvRot,
+    collider& secondCollider, const math::vec3& secondCenter, const math::mat4& secondTransf, const math::mat3& secondInvRot,
     const simplex& smplx, collision_normal& minNormal)
 {
     auto getSupportPoint = [&](const math::vec3& dir)
     {
         return calculateSupportPoint(
-            firstCollider, firstCenter, firstPos, firstRot, firstInvRot, firstScale,
-            secondCollider, secondCenter, secondPos, secondRot, secondInvRot, secondScale,
+            firstCollider, firstCenter, firstTransf, firstInvRot,
+            secondCollider, secondCenter, secondTransf, secondInvRot,
             dir);
     };
 
@@ -281,31 +281,29 @@ bool PhysicsSystem::checkCollision(const collision_pair& pair, collision& data)
 {
     collider& firstCollider = pair.firstCollider;
     auto firstLocalCenter = firstCollider.bounds.center();
-    auto& firstWorldPos = pair.firstPosition;
-    auto firstWorldRotation = math::mat3_cast(pair.firstRotation);
-    auto firstWorldInvRotation = math::inverse(firstWorldRotation);
-    auto& firstWorldScale = pair.firstScale;
+    auto& firstTransf = pair.firstTransf;
+    auto& firstInvRot = pair.firstInvRot;
+    auto firstWorldPos = firstTransf[3].xyz();
 
     collider& secondCollider = pair.secondCollider;
     auto secondLocalCenter = secondCollider.bounds.center();
-    auto& secondWorldPos = pair.secondPosition;
-    auto secondWorldRotation = math::mat3_cast(pair.secondRotation);
-    auto secondWorldInvRotation = math::inverse(secondWorldRotation);
-    auto& secondWorldScale = pair.secondScale;
+    auto& secondTransf = pair.secondTransf;
+    auto& secondInvRot = pair.secondInvRot;
+    auto secondWorldPos = secondTransf[3].xyz();
 
     auto getSupportPoint = [&](const math::vec3& dir)
     {
         return calculateSupportPoint(
-            firstCollider, firstLocalCenter, firstWorldPos, firstWorldRotation, firstWorldInvRotation, firstWorldScale,
-            secondCollider, secondLocalCenter, secondWorldPos, secondWorldRotation, secondWorldInvRotation, secondWorldScale,
+            firstCollider, firstLocalCenter, firstTransf, firstInvRot,
+            secondCollider, secondLocalCenter, secondTransf, secondInvRot,
             dir);
     };
 
     auto toSecond = safeNormalize((secondWorldPos + secondLocalCenter) - (firstWorldPos + firstLocalCenter));
 
     auto dist = calculateCollision(
-        firstCollider, firstLocalCenter, firstWorldPos, firstWorldRotation, firstWorldScale,
-        secondCollider, secondLocalCenter, secondWorldPos, secondWorldRotation, secondWorldScale,
+        firstCollider, firstLocalCenter, firstTransf, firstInvRot,
+        secondCollider, secondLocalCenter, secondTransf, secondInvRot,
         toSecond);
 
     if (dist >= 0)
@@ -340,8 +338,8 @@ bool PhysicsSystem::checkCollision(const collision_pair& pair, collision& data)
     } while (!smplx.next(direction));
 
     if (getCollisionNormal(
-        firstCollider, firstLocalCenter, firstWorldPos, firstWorldRotation, firstWorldInvRotation, firstWorldScale,
-        secondCollider, secondLocalCenter, secondWorldPos, secondWorldRotation, secondWorldInvRotation, secondWorldScale,
+        firstCollider, firstLocalCenter, firstTransf, firstInvRot,
+        secondCollider, secondLocalCenter, secondTransf, secondInvRot,
         smplx, data.normal))
     {
         data.first = pair.first;

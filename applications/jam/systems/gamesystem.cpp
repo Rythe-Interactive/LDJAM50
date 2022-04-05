@@ -158,7 +158,7 @@ void GameSystem::setup()
 
     //SpawnEnemies
     {
-        for (size_type i = 0; i < 30; i++)
+        for (size_type i = 0; i < 100; i++)
         {
             spawnEnemy();
         }
@@ -316,14 +316,14 @@ void GameSystem::shoot(player_shoot& action)
         if (action.pressed())
         {
             auto bullet = createEntity("Bullet");
-            auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::yellow, 5.f, 8.f)).get();
-            auto& e_pos = ent.get_component<position>().get();
-            auto& e_rot = ent.get_component<rotation>().get();
+            bullet.add_component<gfx::light>(gfx::light::point(math::colors::yellow, 5.f, 8.f)).get();
+            auto e_pos = ent.get_component<position>().get();
+            auto e_rot = ent.get_component<rotation>().get();
             auto& b_pos = bullet.add_component<position>().get();
             auto& b_rot = bullet.add_component<rotation>().get();
             auto& b_scal = bullet.add_component<scale>().get();
             b_pos = e_pos.xyz() + e_rot.forward() * .5f;
-            b_rot = b_rot.forward();
+            b_rot = e_rot;
             b_scal = scale(1.f);
 
             ent.get_component<audio::audio_source>()->play();
@@ -338,6 +338,7 @@ void GameSystem::shoot(player_shoot& action)
             auto p_vel = ent.get_component<rigidbody>()->velocity;
             auto& b_rb = bullet.add_component<rigidbody>().get();
             b_rb.velocity = p_vel;
+            b_rb.addForce(shootDir * 1000.f);
             b_rb.setMass(.1f);
 
             auto col = bullet.add_component<collider>();
