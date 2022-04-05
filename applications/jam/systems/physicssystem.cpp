@@ -122,11 +122,6 @@ static math::vec3 calculateSupportPoint(
     }
     secondSupport = secondPos + (secondRot * (secondSupport * secondScale));
 
-    //debug::drawLine(firstPos + firstCenter, firstSupport, math::colors::magenta, 10.f, 0.02f);
-    //debug::drawLine(firstPos + firstCenter, firstPos + firstCenter + (direction * 2.f), math::colors::green, 10.f, 0.02f);
-    //debug::drawLine(secondPos + secondCenter, secondSupport, math::colors::magenta, 10.f, 0.02f);
-    //debug::drawLine(secondPos + secondCenter, secondPos + secondCenter + (-direction * 2.f), math::colors::green, 10.f, 0.02f);
-
     return firstSupport - secondSupport;
 }
 

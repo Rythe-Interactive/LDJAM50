@@ -5,6 +5,9 @@
 #include <rendering/data/particlepolicies/renderpolicy.hpp>
 #include <rendering/data/particlepolicies/flipbookpolicy.hpp>
 
+#include <rendering/util/gui.hpp>
+#include <rendering/pipeline/gui/stages/imguirenderstage.hpp>
+#include <imgui/imgui_internal.h>
 
 void GameSystem::setup()
 {
@@ -14,22 +17,16 @@ void GameSystem::setup()
 
     auto* pipeline = dynamic_cast<gfx::DefaultPipeline*>(gfx::Renderer::getMainPipeline());
     if (pipeline)
-        pipeline->attachStage<MouseHover>();
+    {
+        pipeline->attachStage<ImGuiStage>();
+    }
+
+    ImGuiStage::addGuiRender<GameSystem, &GameSystem::onGUI>(this);
 
     app::window& window = ecs::world.get_component<app::window>();
     window.enableCursor(false);
     window.show();
     app::context_guard guard(window);
-
-    //auto groundplane = createEntity("Ground Plane");
-    auto groundmat = rendering::MaterialCache::create_material("floor", "assets://shaders/groundplane.shs"_view);
-    groundmat.set_param("floorTile", rendering::TextureCache::create_texture("floorTile", "engine://resources/default/tile.png"_view));
-    groundmat.set_variant("depth_only");
-    groundmat.set_param("floorTile", rendering::TextureCache::create_texture("floorTile", "engine://resources/default/tile.png"_view));
-    groundmat.set_variant("default");
-    rendering::ModelCache::create_model("floor", "assets://models/plane.obj"_view);
-    //groundplane.add_component(gfx::mesh_renderer{ groundmat, rendering::ModelCache::create_model("floor", "assets://models/plane.obj"_view) });
-    //groundplane.add_component<transform>();
 
     auto skyboxMat = rendering::MaterialCache::create_material("skybox", "assets://shaders/skybox.shs"_view);
     skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo7.png"),
@@ -51,25 +48,6 @@ void GameSystem::setup()
     audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
 
     initInput();
-
-    //Serialization Test
-    srl::SerializerRegistry::registerSerializer<example_comp>();
-    srl::SerializerRegistry::registerSerializer<ecs::entity>();
-    srl::SerializerRegistry::registerSerializer<position>();
-    srl::SerializerRegistry::registerSerializer<rotation>();
-    srl::SerializerRegistry::registerSerializer<velocity>();
-    srl::SerializerRegistry::registerSerializer<scale>();
-    srl::SerializerRegistry::registerSerializer<assets::import_settings<mesh>>();
-    srl::SerializerRegistry::registerSerializer<sub_mesh>();
-    srl::SerializerRegistry::registerSerializer<mesh>();
-    srl::SerializerRegistry::registerSerializer<assets::asset<mesh>>();
-    srl::SerializerRegistry::registerSerializer<material_data>();
-    srl::SerializerRegistry::registerSerializer<mesh_filter>();
-    srl::SerializerRegistry::registerSerializer<math::vec2>();
-    srl::SerializerRegistry::registerSerializer<math::vec3>();
-    srl::SerializerRegistry::registerSerializer<math::vec4>();
-    srl::SerializerRegistry::registerSerializer<math::mat4>();
-    srl::SerializerRegistry::registerSerializer<math::color>();
 
     material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
     material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
@@ -151,6 +129,8 @@ void GameSystem::setup()
         cam.set_projection(60.f, 0.001f, 1000.f);
         camera_ent.add_component<gfx::camera>(cam);
         player.add_child(camera_ent);
+        auto col = player.add_component<collider>();
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
     }
 
     //SpawnEnemies
@@ -167,6 +147,8 @@ void GameSystem::setup()
             enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
             rb->linearDrag = 1.1f;
             rb->setMass(.8f);
+            auto col = enemy.add_component<collider>();
+            col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
         }
     }
 
@@ -190,12 +172,10 @@ void GameSystem::setup()
     bindToEvent<collision, &GameSystem::onCollision>();
 }
 
-void GameSystem::update(legion::time::span deltaTime)
+void GameSystem::onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime)
 {
-    using namespace legion;
-    /*if (escaped)
-        mouseOver();*/
 }
+
 void GameSystem::pitch(player_pitch& axis)
 {
     if (escaped)
@@ -385,76 +365,7 @@ void GameSystem::onCollision(collision& event)
     //if (bullet)
     //    bullet.destroy();
 }
-void GameSystem::mouseOver()
-{
-    using namespace lgn;
-    auto hoveredEntityId = MouseHover::getHoveredEntityId();
-    if (hoveredEntityId != invalid_id)
-    {
-        auto ent = ecs::Registry::getEntity(hoveredEntityId);
 
-        if (ent != GuiTestSystem::selected && ent.has_component<transform>())
-        {
-            transform transf = ent.get_component<transform>();
-
-            math::mat4 worldMat = transf.to_world_matrix();
-            math::vec3 min = math::vec3(-0.5f, -0.5f, -0.5f);
-            math::vec3 max = math::vec3(0.5f, 0.5f, 0.5f);
-
-            std::pair<math::vec3, math::vec3> edges[] = {
-                std::make_pair(min, math::vec3(min.x, min.y, max.z)),
-                std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(max.x, min.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, min.y, min.z)),
-                std::make_pair(math::vec3(max.x, min.y, min.z), min),
-
-                std::make_pair(max, math::vec3(max.x, max.y, min.z)),
-                std::make_pair(math::vec3(max.x, max.y, min.z), math::vec3(min.x, max.y, min.z)),
-                std::make_pair(math::vec3(min.x, max.y, min.z), math::vec3(min.x, max.y, max.z)),
-                std::make_pair(math::vec3(min.x, max.y, max.z), max),
-
-                std::make_pair(min, math::vec3(min.x, max.y, min.z)),
-                std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(min.x, max.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, max.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, min.z), math::vec3(max.x, max.y, min.z))
-            };
-
-            for (auto& edge : edges)
-                debug::drawLine((worldMat * math::vec4(edge.first.x, edge.first.y, edge.first.z, 1.f)).xyz(), (worldMat * math::vec4(edge.second.x, edge.second.y, edge.second.z, 1.f)).xyz(), math::colors::orange, 10.f);
-        }
-    }
-
-    if (GuiTestSystem::selected != invalid_id)
-    {
-        if (GuiTestSystem::selected.has_component<transform>())
-        {
-            transform transf = GuiTestSystem::selected.get_component<transform>();
-
-            math::mat4 worldMat = transf.to_world_matrix();
-            math::vec3 min = math::vec3(-0.5f, -0.5f, -0.5f);
-            math::vec3 max = math::vec3(0.5f, 0.5f, 0.5f);
-
-            std::pair<math::vec3, math::vec3> edges[] = {
-                std::make_pair(min, math::vec3(min.x, min.y, max.z)),
-                std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(max.x, min.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, min.y, min.z)),
-                std::make_pair(math::vec3(max.x, min.y, min.z), min),
-
-                std::make_pair(max, math::vec3(max.x, max.y, min.z)),
-                std::make_pair(math::vec3(max.x, max.y, min.z), math::vec3(min.x, max.y, min.z)),
-                std::make_pair(math::vec3(min.x, max.y, min.z), math::vec3(min.x, max.y, max.z)),
-                std::make_pair(math::vec3(min.x, max.y, max.z), max),
-
-                std::make_pair(min, math::vec3(min.x, max.y, min.z)),
-                std::make_pair(math::vec3(min.x, min.y, max.z), math::vec3(min.x, max.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, max.z), math::vec3(max.x, max.y, max.z)),
-                std::make_pair(math::vec3(max.x, min.y, min.z), math::vec3(max.x, max.y, min.z))
-            };
-
-            for (auto& edge : edges)
-                debug::drawLine((worldMat * math::vec4(edge.first.x, edge.first.y, edge.first.z, 1.f)).xyz(), (worldMat * math::vec4(edge.second.x, edge.second.y, edge.second.z, 1.f)).xyz(), math::colors::green, 10.f);
-        }
-    }
-}
 void GameSystem::initInput()
 {
     using namespace legion;
@@ -463,10 +374,6 @@ void GameSystem::initInput()
     app::InputSystem::createBinding<tonemap_action>(app::inputmap::method::F2);
     app::InputSystem::createBinding<auto_exposure_action>(app::inputmap::method::F4);
     app::InputSystem::createBinding<exit_action>(app::inputmap::method::ESCAPE);
-    //app::InputSystem::createBinding<restart_action>(app::inputmap::method::F10);
-    //app::InputSystem::createBinding<escape_cursor_action>(app::inputmap::method::F9);
-    //app::InputSystem::createBinding<switch_skybox_action>(app::inputmap::method::F3);
-    //app::InputSystem::createBinding<reload_shaders_action>(app::inputmap::method::F5);
 
     app::InputSystem::createBinding<player_shoot>(app::inputmap::method::MOUSE_LEFT);
     app::InputSystem::createBinding<player_pitch>(app::inputmap::method::MOUSE_Y, 1.f);
@@ -496,48 +403,8 @@ void GameSystem::initInput()
     bindToEvent<exit_action, &GameSystem::onExit>();
     bindToEvent<fullscreen_action, &GameSystem::onFullscreen>();
     bindToEvent<vsync_action, &GameSystem::onVSYNCSwap>();
-    //bindToEvent<switch_skybox_action, &GameSystem::onSkyboxSwitch>();
-    //bindToEvent<reload_shaders_action, &GameSystem::onShaderReload>();
-    //bindToEvent<restart_action, &GameSystem::onRestart>();
-    //bindToEvent<escape_cursor_action, &GameSystem::onEscapeCursor>();
 }
-void GameSystem::onGetCamera(lgn::time::span)
-{
-    using namespace lgn;
-    static ecs::filter<gfx::camera> query{};
 
-    if (query.size())
-    {
-        camera = query[0];
-    }
-}
-void GameSystem::onShaderReload(reload_shaders_action& event)
-{
-    using namespace legion;
-    if (event.released())
-    {
-        auto targetWin = ecs::world.get_component<app::window>();
-        if (!targetWin)
-            return;
-
-        app::window& win = targetWin.get();
-
-        if (!app::WindowSystem::windowStillExists(win.handle))
-            return;
-
-        app::context_guard guard(win);
-        if (guard.contextIsValid())
-        {
-            gfx::ShaderCache::clear_checked_paths();
-            gfx::ShaderCache::reload_shaders();
-
-            auto [lock, materials] = gfx::MaterialCache::get_all_materials();
-            async::readonly_guard materialsGuard(lock);
-            for (auto& [id, mat] : materials)
-                mat.reload();
-        }
-    }
-}
 void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
 {
     using namespace legion;
@@ -552,6 +419,7 @@ void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)
         log::debug("Auto exposure {}", enabled ? "enabled" : "disabled");
     }
 }
+
 void GameSystem::onTonemapSwitch(tonemap_action& event)
 {
     using namespace legion;
@@ -589,57 +457,7 @@ void GameSystem::onTonemapSwitch(tonemap_action& event)
         gfx::Tonemapping::setAlgorithm(typeEnum);
     }
 }
-void GameSystem::onSkyboxSwitch(switch_skybox_action& event)
-{
-    using namespace legion;
-    using namespace rendering;
 
-    ecs::filter<skybox_renderer> filter;
-    if (filter.empty())
-        return;
-
-    if (event.released())
-    {
-        static size_type idx = 0;
-        static texture_handle textures[4] = {};
-        static bool initialized = false;
-
-        if (!initialized)
-        {
-            auto targetWin = ecs::world.get_component<app::window>();
-            if (!targetWin)
-                return;
-
-            app::window& win = targetWin.get();
-
-            if (!app::WindowSystem::windowStillExists(win.handle))
-                return;
-
-            app::context_guard guard(win);
-            if (guard.contextIsValid())
-            {
-                auto importSettings = texture_import_settings{
-                        texture_type::two_dimensional, true, channel_format::eight_bit, texture_format::rgba_hdr,
-                        texture_components::rgba, true, true, 0, texture_mipmap::linear_mipmap_linear, texture_mipmap::linear,
-                        texture_wrap::edge_clamp,texture_wrap::repeat, texture_wrap::edge_clamp };
-
-                textures[0] = TextureCache::create_texture("morning islands", fs::view("assets://textures/HDRI/morning_islands.jpg"), importSettings);
-                textures[1] = TextureCache::create_texture("earth", fs::view("assets://textures/HDRI/earth.png"), importSettings);
-                textures[2] = TextureCache::create_texture("park", fs::view("assets://textures/HDRI/park.jpg"), importSettings);
-                textures[3] = TextureCache::create_texture("atmosphere", fs::view("assets://textures/HDRI/planetatmo.png"), importSettings);
-                initialized = true;
-            }
-            else
-                return;
-        }
-
-        idx = (idx + 1) % 4;
-        auto skyboxRenderer = filter[0].get_component<skybox_renderer>();
-        skyboxRenderer->material.set_param(SV_SKYBOX, textures[idx]);
-
-        log::debug("Set skybox to {}", textures[idx].get_texture().name);
-    }
-}
 void GameSystem::onExit(exit_action& action)
 {
     using namespace lgn;
@@ -649,15 +467,8 @@ void GameSystem::onExit(exit_action& action)
     if (action.released())
         raiseEvent<events::exit>();
 }
-void GameSystem::onRestart(restart_action& action)
-{
-    using namespace lgn;
-    if (GuiTestSystem::isEditingText)
-        return;
 
-    if (action.released())
-        this_engine::restart();
-}
+
 void GameSystem::onFullscreen(fullscreen_action& action)
 {
     using namespace lgn;
@@ -669,30 +480,8 @@ void GameSystem::onFullscreen(fullscreen_action& action)
         app::WindowSystem::requestFullscreenToggle(ecs::world_entity_id, math::ivec2(100, 100), math::ivec2(1360, 768));
     }
 }
-void GameSystem::onEscapeCursor(escape_cursor_action& action)
-{
-    using namespace lgn;
-    if (GuiTestSystem::isEditingText)
-        return;
 
-    if (action.released() && (action.mods & app::inputmap::modifier_keys::CTRL))
-    {
-        if (!escaped)
-        {
-            app::window& window = ecs::world.get_component<app::window>();
-            escaped = true;
-            window.enableCursor(true);
-        }
-        else
-        {
-            app::window& window = ecs::world.get_component<app::window>();
-            escaped = false;
-            window.enableCursor(false);
-        }
-    }
 
-    GuiTestSystem::CaptureKeyboard(!escaped);
-}
 void GameSystem::onVSYNCSwap(vsync_action& action)
 {
     using namespace lgn;

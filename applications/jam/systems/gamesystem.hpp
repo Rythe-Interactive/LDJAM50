@@ -41,11 +41,7 @@ public:
 
     void setup();
 
-    void shutdown()
-    {
-        lgn::log::debug("GameSystem shutdown");
-    }
-    void update(legion::time::span deltaTime);
+    void onGUI(L_MAYBEUNUSED app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, L_MAYBEUNUSED time::span deltaTime);
 
     void pitch(player_pitch& axis);
     void roll(player_roll& axis);
@@ -56,18 +52,11 @@ public:
     void shoot(player_shoot& action);
 
     void onCollision(collision& event);
-
-    void mouseOver();
     void initInput();
 
-    void onShaderReload(reload_shaders_action& event);
     void onAutoExposureSwitch(auto_exposure_action& event);
     void onTonemapSwitch(tonemap_action& event);
-    void onSkyboxSwitch(switch_skybox_action& event);
     void onExit(exit_action& action);
-    void onGetCamera(lgn::time::span);
-    void onRestart(restart_action& action);
     void onFullscreen(fullscreen_action& action);
-    void onEscapeCursor(escape_cursor_action& action);
     void onVSYNCSwap(vsync_action& action);
 };
