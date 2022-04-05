@@ -40,6 +40,7 @@ public:
     float radialMovement = 500.f;
 
     time::timer timeSinceStart;
+    float score = 0;
 
     void setup();
 

@@ -54,7 +54,7 @@ class BruteForce final : public BroadPhase
 
 class SpacialHash final : public BroadPhase
 {
-    constexpr static float cellSize = 5.f;
+    constexpr static float cellSize = 25.f;
 
     struct [[no_reflect]] collidable_data
     {
@@ -185,9 +185,17 @@ class SpacialHash final : public BroadPhase
                     if (first.ent == second.ent)
                         continue;
 
+                    if (second.coll->ignoreMask & first.coll->layer)
+                        continue;
+
+                    if (first.coll->ignoreMask & second.coll->layer)
+                        continue;
+
                     id_type pairHash = getPairHash(first.ent, second.ent);
                     if (!m_knownPairs.count(pairHash))
                     {
+                        log::debug("pair {} {}", first.ent->name, second.ent->name);
+
                         m_knownPairs.emplace(pairHash);
                         pairs.emplace_back(first.ent, first.position, first.rotation, first.scale, std::ref(*first.coll), second.ent, second.position, second.rotation, second.scale, std::ref(*second.coll));
                     }

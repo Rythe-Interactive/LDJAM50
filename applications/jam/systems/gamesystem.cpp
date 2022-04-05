@@ -87,6 +87,8 @@ void GameSystem::setup()
         camera_ent.add_component<gfx::camera>(cam);
         player.add_child(camera_ent);
         auto col = player.add_component<collider>();
+        col->layer = 4;
+        col->ignoreMask = 4;
         col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
 
         model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
@@ -94,11 +96,13 @@ void GameSystem::setup()
         {
             auto asteroid = createEntity("Asteroid" + std::to_string(i));
             auto [pos, rot, scal] = asteroid.add_component<transform>();
-            scal = scale(1.f) * math::linearRand(1.f, 2.f);
+            scal = scale(1.f) * math::linearRand(1.f, 20.f);
             rot = rotation(math::sphericalRand(1.f));
             pos = math::ballRand(500.f);
             asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
             auto col = asteroid.add_component<collider>();
+            col->layer = 1;
+            col->ignoreMask = 1 | 2;
             col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.f);
 
             auto rb = asteroid.add_component<rigidbody>();
@@ -178,7 +182,7 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
 
     imwindow->FontWindowScale = 2.f;
 
-    ImGui::Text("SCORE: %d", static_cast<int>(timeSinceStart.elapsed_time().seconds()));
+    ImGui::Text("SCORE: %d", static_cast<int>(score + timeSinceStart.elapsed_time().seconds()));
 
 
     static float timeBuffer = 0.f;
@@ -211,6 +215,8 @@ void GameSystem::spawnEnemy()
     rb->linearDrag = 1.1f;
     rb->setMass(.8f);
     auto col = enemy.add_component<collider>();
+    col->layer = 2;
+    col->ignoreMask = 1 | 2;
     col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
 }
 
@@ -331,6 +337,8 @@ void GameSystem::shoot(player_shoot& action)
             b_rb.setMass(.1f);
 
             auto col = bullet.add_component<collider>();
+            col->layer = 4;
+            col->ignoreMask = 4;
             col->add_shape<SphereCollider>();
         }
     }
@@ -379,6 +387,7 @@ void GameSystem::onCollision(collision& event)
             if (enemyComp.health <= 0.f)
             {
                 other.destroy();
+                score += 5;
                 return;
             }
         }

@@ -6,6 +6,10 @@
 struct collider
 {
     bounding_box bounds;
+
+    uint8 layer = 0;
+    uint8 ignoreMask = 0;
+
     std::vector<std::unique_ptr<CollisionShape>> shapes;
 
     collider() = default;
