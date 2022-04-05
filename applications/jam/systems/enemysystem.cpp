@@ -208,15 +208,19 @@ void EnemySystem::shoot(ecs::entity enemy)
 {
     using namespace lgn;
 
-    auto bullet = createEntity("EnemyBullet");
+    auto bullet = createEntity("EnemyBullet" + std::to_string(bulletCount));
+    bulletCount++;
 
     auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::red, 2.f, 5.f)).get();
     auto& e_pos = enemy.get_component<position>().get();
     auto& e_rot = enemy.get_component<rotation>().get();
-    auto [b_pos, b_rot, b_scal] = bullet.add_component<transform>();
-    b_pos = e_pos.xyz() + e_rot.forward();
-    b_rot = e_rot;
-    b_scal = scale(.2f, .2f, 1.f);
+
+    auto& b_pos = bullet.add_component<position>().get();
+    auto& b_rot = bullet.add_component<rotation>().get();
+    auto& b_scal = bullet.add_component<scale>().get();
+    b_pos = e_pos.xyz() + e_rot.forward() * .5f;
+    b_rot = b_rot.forward();
+    b_scal = scale(1.f);
 
     auto model = gfx::ModelCache::get_handle("Bullet");
     auto material = gfx::MaterialCache::get_material("Light");
