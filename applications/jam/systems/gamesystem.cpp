@@ -71,7 +71,7 @@ void GameSystem::setup()
         material.set_param("useMetallicTex", true);
 
 
- 		auto player = createEntity("Player");
+        auto player = createEntity("Player");
         player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
         auto [pos, rot, scal] = player.add_component<transform>();
         player.add_component<audio::audio_listener>();
@@ -334,7 +334,6 @@ void GameSystem::shoot(player_shoot& action)
             material.set_param("intensity", 2.f);
             bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
             bullet.add_component<bullet_comp>();
-            auto shootDir = ent.get_component<rotation>()->forward();
             auto p_vel = ent.get_component<rigidbody>()->velocity;
             auto& b_rb = bullet.add_component<rigidbody>().get();
             b_rb.velocity = p_vel;
@@ -351,10 +350,10 @@ void GameSystem::shoot(player_shoot& action)
 
 void GameSystem::onCollision(collision& event)
 {
-    //log::debug("Collision between {} and {}, with normal {}, and depth {}",
-    //    event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
-    //    event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
-    //    event.normal.axis, event.normal.depth);
+    log::debug("Collision between {} and {}, with normal {}, and depth {}",
+        event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
+        event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
+        event.normal.axis, event.normal.depth);
 
     ecs::entity other{ nullptr };
     ecs::entity bullet{ nullptr };
@@ -373,7 +372,6 @@ void GameSystem::onCollision(collision& event)
     if (bullet)
     {
         bullet_comp& bulletComp = bullet.get_component<bullet_comp>();
-
 
         if (other.has_component<player_comp>())
         {
