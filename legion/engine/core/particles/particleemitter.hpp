@@ -49,15 +49,13 @@ namespace legion::core
         float m_spawnInterval = .1f;
         //Regulates the spawnrate to stay consistent over different timesteps
         float m_spawnBuffer = 0.0f;
-        //Elapsed time since last spawn interval        default: 0.f
-        float m_elapsedTime = 0.f;
+
     public:
         //Should particles be in the emitters space or the world space      default: true
         bool localSpace = true;
-        //If enabled no particles can die and the emitter will keep spawning them until it reaches the limit        default: false
-        //bool particleAging = false;
-        //If enabled the emitter will continue spawning until the total amount of particles that have ever been spawned reaches the capacity
-        bool spawnUntilCap = true;
+        //Elapsed time since last spawn interval        default: 0.f
+        float m_elapsedTime = 0.f;
+        float m_targetTime = 1.f;
     private:
         std::vector<bool> m_livingBuffer{};
         std::vector<std::unique_ptr<particle_policy_base>> m_particlePolicies;

@@ -10,7 +10,7 @@
 using namespace lgn;
 class BulletSystem final : public legion::System<BulletSystem>
 {
-    ecs::filter<bullet_comp> bullets;
+    ecs::filter<position, rotation, scale, rigidbody, bullet_comp> bullets;
 public:
     void setup();
     void update(lgn::time::span);

@@ -160,36 +160,32 @@ void EnemySystem::hunt(float deltaTime)
 {
     for (auto& player : players)
     {
-        auto playerPos = player.get_component<position>().get();
+        position& playerPos = player.get_component<position>();
         bnds.set_origin(playerPos);
 
         for (auto& enemy : enemies)
         {
-            auto diff = enemy.get_component<position>().get() - playerPos;
-            auto& enemy_c = enemy.get_component<enemy_comp>().get();
+            position& enemyPos = enemy.get_component<position>();
+            auto diff = enemyPos - playerPos;
+            enemy_comp& enemy_c = enemy.get_component<enemy_comp>();
             enemy_c.elapsedTime += deltaTime;
             auto seperationRadius = enemy_c.playerSeperationRadius * enemy_c.playerSeperationRadius;
-            auto huntRadius = enemy_c.playerHuntRadius * enemy_c.playerHuntRadius;
-            if (math::length2(diff) < huntRadius && !enemy_c.running)
-            {
-                enemy_c.hunt = true;
-            }
+            auto visionRadius = enemy_c.visionRadius * enemy_c.visionRadius;
 
-            if (math::length2(diff) < seperationRadius && enemy_c.hunt)
+            if (math::length2(diff) < seperationRadius)
             {
-                enemy_c.hunt = false;
                 enemy_c.running = true;
             }
 
-            if (math::length2(diff) > huntRadius)
+            if (math::length2(diff) > visionRadius)
             {
-                enemy_c.hunt = false;
                 enemy_c.running = false;
             }
 
-            if (enemy_c.hunt)
+            if (!enemy_c.running)
             {
-                enemy_c.direction = math::normalize(-diff) * enemy_c.speed * 5.f;
+                enemy_c.direction = math::normalize(-diff) * enemy_c.speed;
+                debug::drawLine(enemyPos, enemyPos + enemy_c.direction);
                 if (180.f - math::rad2deg(math::angleBetween(enemy.get_component<rotation>()->forward(), math::normalize(diff))) < 15.f)
                     if (enemy_c.elapsedTime > enemy_c.shootInterval)
                     {
@@ -197,8 +193,7 @@ void EnemySystem::hunt(float deltaTime)
                         enemy_c.elapsedTime = 0.f;
                     }
             }
-
-            if (enemy_c.running)
+            else if (enemy_c.running)
                 enemy_c.direction += seperationRadius / diff;
         }
     }
@@ -208,19 +203,28 @@ void EnemySystem::shoot(ecs::entity enemy)
 {
     using namespace lgn;
 
-    auto bullet = createEntity("EnemyBullet" + std::to_string(bulletCount));
-    bulletCount++;
+    static size_type i = 0;
+    auto bullet = createEntity("EnemyBullet" + std::to_string(i++));
+    bullet.add_component<transform>();
+    bullet.add_component<rigidbody>();
+    bullet.add_component<bullet_comp>();
+    bullet.add_component<gfx::light>(gfx::light::point(math::colors::red, 2.f, 5.f)).get();
+    bullet.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("LaserShot"));
 
-    auto& light = bullet.add_component<gfx::light>(gfx::light::point(math::colors::red, 2.f, 5.f)).get();
-    auto e_pos = enemy.get_component<position>().get();
-    auto e_rot = enemy.get_component<rotation>().get();
+    if (bullet.has_component<audio::audio_source>())
+    {
+        audio::audio_source& source = bullet.get_component<audio::audio_source>();
+        source.play();
+    }
 
-    auto& b_pos = bullet.add_component<position>().get();
-    auto& b_rot = bullet.add_component<rotation>().get();
-    auto& b_scal = bullet.add_component<scale>().get();
-    b_pos = e_pos.xyz() + e_rot.forward() * .5f;
-    b_rot = e_rot;
-    b_scal = scale(1.f);
+    position enemyPos = enemy.get_component<position>();
+    rotation enemyRot = enemy.get_component<rotation>();
+    position& bulletPos = bullet.get_component<position>();
+    rotation& bulletRot = bullet.get_component<rotation>();
+    scale& bulletScal = bullet.get_component<scale>();
+    bulletPos = enemyPos.xyz() + enemyRot.forward() * .5f;
+    bulletRot = enemyRot;
+    bulletScal = scale(.3f, .3f, 1.5f);
 
     auto model = gfx::ModelCache::get_handle("Bullet");
     auto material = gfx::MaterialCache::get_material("Light");
@@ -228,12 +232,13 @@ void EnemySystem::shoot(ecs::entity enemy)
     material.set_param("intensity", 2.f);
     bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
 
-    bullet.add_component<bullet_comp>()->fromPlayer = false;
-    auto p_vel = enemy.get_component<rigidbody>()->velocity;
-    auto& b_rb = bullet.add_component<rigidbody>().get();
-    b_rb.velocity = p_vel;
-    b_rb.addForce(e_rot.forward() * 800.f);
-    b_rb.setMass(.1f);
+    bullet_comp& bulletComp = bullet.get_component<bullet_comp>();
+    bulletComp.fromPlayer = false;
+
+    rigidbody& bulletRb = bullet.get_component<rigidbody>();
+    rigidbody enemyRb = enemy.get_component<rigidbody>();
+    bulletRb.velocity = enemyRb.velocity;
+    bulletRb.setMass(.1f);
 
     auto& col = bullet.add_component<collider>().get();
     col.layer = 2;

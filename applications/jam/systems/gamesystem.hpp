@@ -38,6 +38,8 @@ public:
     bool escaped = false;
     float linearMovement = 150.f;
     float radialMovement = 500.f;
+    size_type enemyCount = 0;
+    size_type maxEnemies = 500;
 
     time::timer timeSinceStart;
     float score = 0;
@@ -54,10 +56,13 @@ public:
     void strafe(player_strafe& axis);
     void vertical(player_vertical& axis);
     void thrust(player_thrust& axis);
-    void shoot(player_shoot& action);
+    void onShoot(player_shoot& action);
+    void shoot(ecs::entity player);
 
     void onCollision(collision& event);
     void initInput();
+
+    void spawnExplosion(ecs::entity ent);
 
     void onAutoExposureSwitch(auto_exposure_action& event);
     void onTonemapSwitch(tonemap_action& event);

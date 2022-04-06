@@ -11,19 +11,26 @@ void BulletSystem::update(lgn::time::span deltaTime)
     using namespace lgn;
     for (auto& ent : bullets)
     {
-        auto& bullet = ent.get_component<bullet_comp>().get();
+        if (ent.has_component<audio::audio_source>())
+        {
+            audio::audio_source& source = ent.get_component<audio::audio_source>();
+            if (!source.isPlaying())
+                ent.remove_component<audio::audio_source>();
+        }
+
+        bullet_comp& bullet = ent.get_component<bullet_comp>();
+
         bullet.age += deltaTime;
         if (bullet.age > bullet.lifetime)
         {
             ent.destroy();
             continue;
         }
-        auto& rb = ent.get_component<rigidbody>().get();
-        auto& rot = ent.get_component<rotation>().get();
+        rigidbody& rb = ent.get_component<rigidbody>();
+        rotation& rot = ent.get_component<rotation>();
         rb.addForce(rot.forward() * 2000.f * (float)deltaTime);
 
-        //auto& scal = ent.get_component<scale>().get();
-        //scal.z = math::length(math::normalize(rb.velocity) * 2.f);
+        scale& scal = ent.get_component<scale>();
         //scal = scal * (1.f - (bullet.age / bullet.lifetime));
         //scal = math::clamp(scal, math::vec3(0.01f), math::vec3(5.f));
     }

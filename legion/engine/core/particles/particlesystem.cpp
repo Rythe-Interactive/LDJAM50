@@ -26,7 +26,7 @@ namespace legion::core
 
             emitter.m_elapsedTime += deltaTime;
 
-            if (emitter.m_particleCount < emitter.m_capacity && emitter.m_totalParticlesSpawned < emitter.m_capacity)
+            if (emitter.m_particleCount < emitter.m_capacity)
             {
                 emitter.m_spawnBuffer += deltaTime;
                 if (emitter.m_spawnBuffer > emitter.m_spawnInterval)
