@@ -393,13 +393,17 @@ void GameSystem::onCollision(collision& event)
 
         if (other.has_component<player_comp>())
         {
-            return;
+            player_comp& playerComp = other.get_component<player_comp>();
+            playerComp.health -= bulletComp.damge;
+
+            if (playerComp.health <= 0.f)
+            {
+                raiseEvent<events::exit>();
+                log::debug("Score: {}", static_cast<int>(score + timeSinceStart.elapsed_time().seconds()));
+            }
         }
         else if (other.has_component<enemy_comp>())
         {
-            if (!bulletComp.fromPlayer)
-                return;
-
             enemy_comp& enemyComp = other.get_component<enemy_comp>().get();
             enemyComp.health -= bulletComp.damge;
 

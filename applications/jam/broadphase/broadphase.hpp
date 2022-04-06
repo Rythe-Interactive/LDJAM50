@@ -29,6 +29,9 @@ class BruteForce final : public BroadPhase
         for (size_type i = 0; i < collidableCount; i++)
         {
             auto& first = m_colliderQuery[i];
+            if (!first->active)
+                continue;
+
             collidable firstCollidable = first.get_component<collidable>();
 
             math::mat4 firstTransf = firstCollidable.to_world_matrix();
@@ -39,6 +42,9 @@ class BruteForce final : public BroadPhase
             for (size_type j = i + 1; j < collidableCount; j++)
             {
                 auto& second = m_colliderQuery[j];
+                if (!second->active)
+                    continue;
+
                 collidable secondCollidable = second.get_component<collidable>();
                 math::mat4 secondTransf = secondCollidable.to_world_matrix();
                 math::mat3 secondInvRot = math::mat3_cast(math::inverse(secondCollidable.get<rotation>()));
