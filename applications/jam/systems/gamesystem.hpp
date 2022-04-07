@@ -36,6 +36,9 @@ class GameSystem final : public legion::System<GameSystem>
 public:
     lgn::ecs::entity camera;
     lgn::ecs::entity player;
+    lgn::ecs::entity reticle;
+    lgn::ecs::entity target;
+    id_type targetId;
     bool escaped = false;
     float linearMovement = 300.f;
     float radialMovement = 500.f;
@@ -62,6 +65,7 @@ public:
     void initInput();
 
     void spawnExplosion(ecs::entity ent);
+    void spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel);
 
     void onAutoExposureSwitch(auto_exposure_action& event);
     void onTonemapSwitch(tonemap_action& event);

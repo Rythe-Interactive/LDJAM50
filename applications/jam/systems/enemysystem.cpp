@@ -185,7 +185,6 @@ void EnemySystem::hunt(float deltaTime)
             if (!enemy_c.running)
             {
                 enemy_c.direction = math::normalize(-diff) * enemy_c.speed;
-                debug::drawLine(enemyPos, enemyPos + enemy_c.direction);
                 if (180.f - math::rad2deg(math::angleBetween(enemy.get_component<rotation>()->forward(), math::normalize(diff))) < 15.f)
                     if (enemy_c.elapsedTime > enemy_c.shootInterval)
                     {

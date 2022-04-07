@@ -19,6 +19,7 @@ void GameSystem::setup()
     if (pipeline)
     {
         pipeline->attachStage<ImGuiStage>();
+        pipeline->attachStage<MouseHover>();
     }
 
     initInput();
@@ -29,50 +30,70 @@ void GameSystem::setup()
     window.enableCursor(true);
     window.show();
     app::context_guard guard(window);
-
-    auto skyboxMat = rendering::MaterialCache::create_material("skybox", "assets://shaders/skybox.shs"_view);
-    skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo7.png"),
-        texture_import_settings
-        {
-            texture_type::two_dimensional, true, channel_format::eight_bit, texture_format::rgba_hdr,
-            texture_components::rgba, true, true, 0, texture_mipmap::linear_mipmap_linear, texture_mipmap::linear,
-            texture_wrap::edge_clamp, texture_wrap::repeat, texture_wrap::edge_clamp
-        }));
-    ecs::world.add_component(gfx::skybox_renderer{ skyboxMat });
-
-    gfx::ModelCache::create_model("Particle", fs::view("assets://models/billboard.glb"));
-    gfx::ModelCache::create_model("Bullet", fs::view("assets://models/sphere.obj"));
-
     {
-        auto material = gfx::MaterialCache::create_material("BulletMat", fs::view("assets://shaders/texture.shs"));
-        material.set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
+        auto skyboxMat = rendering::MaterialCache::create_material("skybox", "assets://shaders/skybox.shs"_view);
+        skyboxMat.set_param(SV_SKYBOX, TextureCache::create_texture("planet atmo", fs::view("assets://textures/HDRI/planetatmo7.png"),
+            texture_import_settings
+            {
+                texture_type::two_dimensional, true, channel_format::eight_bit, texture_format::rgba_hdr,
+                texture_components::rgba, true, true, 0, texture_mipmap::linear_mipmap_linear, texture_mipmap::linear,
+                texture_wrap::edge_clamp, texture_wrap::repeat, texture_wrap::edge_clamp
+            }));
+        ecs::world.add_component(gfx::skybox_renderer{ skyboxMat });
 
-        audio::AudioSegmentCache::createAudioSegment("Explosion", fs::view("assets://audio/fx/Explosion2.wav"));
-        audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
-        audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
+        {
+            gfx::ModelCache::create_model("Particle", fs::view("assets://models/billboard.glb"));
+            gfx::ModelCache::create_model("Bullet", fs::view("assets://models/sphere.obj"));
+            gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
+            gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
+            gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
+            gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
+        }
 
-        material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
-        material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
-        auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
-        material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
-        texture_import_settings settings = gfx::default_texture_settings;
-        settings.mag = gfx::texture_mipmap::nearest;
-        auto color = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/ColorPalette.png"), settings);
-        auto emissive = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/EmissivePallete.png"), settings);
-        auto metallic = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/MetallicPalette.png"), settings);
-        auto roughness = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/RoughnessPalette.png"), settings);
-        material.set_param("albedoTex", color);
-        material.set_param("useAlbedoTex", true);
-        material.set_param("emissiveTex", emissive);
-        material.set_param("useEmissiveTex", true);
-        material.set_param("roughnessTex", roughness);
-        material.set_param("useRoughnessTex", true);
-        material.set_param("metallicTex", metallic);
-        material.set_param("useMetallicTex", true);
+        {
+            audio::AudioSegmentCache::createAudioSegment("Explosion", fs::view("assets://audio/fx/Explosion2.wav"));
+            audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
+            audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
+        }
 
+        {
+            gfx::MaterialCache::create_material("BulletMat", fs::view("assets://shaders/texture.shs"));
+            gfx::MaterialCache::get_material("BulletMat").set_param("_texture", gfx::TextureCache::create_texture("Default", fs::view("engine://resources/default/albedo")));
+        }
+
+        {
+            gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
+            texture_import_settings settings = gfx::default_texture_settings;
+            settings.mag = gfx::texture_mipmap::nearest;
+            auto color = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/ColorPalette.png"), settings);
+            auto emissive = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/EmissivePallete.png"), settings);
+            auto metallic = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/MetallicPalette.png"), settings);
+            auto roughness = gfx::TextureCache::create_texture(fs::view("assets://textures/ship/RoughnessPalette.png"), settings);
+            gfx::MaterialCache::get_material("ShipLit").set_param("albedoTex", color);
+            gfx::MaterialCache::get_material("ShipLit").set_param("useAlbedoTex", true);
+            gfx::MaterialCache::get_material("ShipLit").set_param("emissiveTex", emissive);
+            gfx::MaterialCache::get_material("ShipLit").set_param("useEmissiveTex", true);
+            gfx::MaterialCache::get_material("ShipLit").set_param("roughnessTex", roughness);
+            gfx::MaterialCache::get_material("ShipLit").set_param("useRoughnessTex", true);
+            gfx::MaterialCache::get_material("ShipLit").set_param("metallicTex", metallic);
+            gfx::MaterialCache::get_material("ShipLit").set_param("useMetallicTex", true);
+        }
+
+        {
+            gfx::MaterialCache::create_material("TargetReticle", fs::view("assets://shaders/billboard.shs")).set_param("fixedSize", true);
+            gfx::MaterialCache::get_material("TargetReticle").set_param("_texture", gfx::TextureCache::create_texture(fs::view("assets://textures/TargetReticle/TargetReticle.png")));
+            gfx::MaterialCache::get_material("TargetReticle").set_variant("depth_only");
+            gfx::MaterialCache::get_material("TargetReticle").set_param("_texture", gfx::TextureCache::create_texture(fs::view("assets://textures/TargetReticle/TargetReticle.png")));
+            gfx::MaterialCache::get_material("TargetReticle").set_variant("default");
+        }
+
+        {
+            gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
+            gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
+        }
 
         player = createEntity("Player");
-        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ShipLit"),  gfx::ModelCache::get_handle("Ship") });
         auto [playerPos, playerRot, playerScal] = player.add_component<transform>();
         player.add_component<audio::audio_listener>();
         player.add_component<player_comp>();
@@ -101,7 +122,7 @@ void GameSystem::setup()
         col->ignoreMask = 4;
         col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
 
-        model = gfx::ModelCache::create_model("Asteroid1", fs::view("assets://models/asteroid/JamAsteroid1.glb"));
+
         for (size_type i = 0; i < 200; i++)
         {
             auto asteroid = createEntity("Asteroid" + std::to_string(i));
@@ -109,7 +130,7 @@ void GameSystem::setup()
             scal = scale(1.f) * math::linearRand(1.f, 20.f);
             rot = rotation(math::sphericalRand(1.f));
             pos = math::ballRand(500.f);
-            asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+            asteroid.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ShipLit"),  gfx::ModelCache::get_handle("Asteroid1") });
             auto col = asteroid.add_component<collider>();
             col->layer = 1;
             col->ignoreMask = 1 | 2;
@@ -117,7 +138,6 @@ void GameSystem::setup()
 
             auto rb = asteroid.add_component<rigidbody>();
             rb->setMass(15.f);
-
         }
     }
 
@@ -128,11 +148,11 @@ void GameSystem::setup()
             textures.push_back(fs::view("assets://textures/fx/explosion/frame (" + std::to_string(i) + ").png"));
         }
         auto explosionArray = gfx::TextureCache::create_texture_array("explosion", textures);
-        auto material = gfx::MaterialCache::create_material("Explosion", fs::view("assets://shaders/particle.shs"));
-        material.set_param("_texture", explosionArray);
-        material.set_variant("depth_only");
-        material.set_param("_texture", explosionArray);
-        material.set_variant("default");
+        gfx::MaterialCache::create_material("Explosion", fs::view("assets://shaders/particle.shs"));
+        gfx::MaterialCache::get_material("Explosion").set_param("_texture", explosionArray);
+        gfx::MaterialCache::get_material("Explosion").set_variant("depth_only");
+        gfx::MaterialCache::get_material("Explosion").set_param("_texture", explosionArray);
+        gfx::MaterialCache::get_material("Explosion").set_variant("default");
     }
     textures.clear();
     {
@@ -141,20 +161,26 @@ void GameSystem::setup()
             textures.push_back(fs::view("assets://textures/fx/smoke/frame (" + std::to_string(i) + ").png"));
         }
         auto smokeArray = gfx::TextureCache::create_texture_array("smoke", textures);
-        auto material = gfx::MaterialCache::create_material("Smoke", fs::view("assets://shaders/particle.shs"));
-        material.set_param("_texture", smokeArray);
-        material.set_variant("depth_only");
-        material.set_param("_texture", smokeArray);
-        material.set_variant("default");
+        gfx::MaterialCache::create_material("Smoke", fs::view("assets://shaders/particle.shs"));
+        gfx::MaterialCache::get_material("Smoke").set_param("_texture", smokeArray);
+        gfx::MaterialCache::get_material("Smoke").set_variant("depth_only");
+        gfx::MaterialCache::get_material("Smoke").set_param("_texture", smokeArray);
+        gfx::MaterialCache::get_material("Smoke").set_variant("default");
     }
 
     //SpawnEnemies
-    //{
-    //    for (size_type i = 0; i < 100; i++)
-    //    {
-    //        spawnEnemy();
-    //    }
-    //}
+    {
+        for (size_type i = 0; i < 100; i++)
+        {
+            spawnEnemy();
+        }
+    }
+
+    reticle = createEntity("TargetReticle");
+    reticle.add_component<transform>();
+    scale& scal = reticle.get_component<scale>();
+    scal = scale(.5f);
+    reticle.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("TargetReticle"), gfx::ModelCache::get_handle("Particle") });
 
     bindToEvent<collision, &GameSystem::onCollision>();
     timeSinceStart.start();
@@ -173,10 +199,22 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoMouseInputs);
 
     auto* imwindow = ImGui::GetCurrentWindow();
-
     imwindow->FontWindowScale = 2.f;
 
     ImGui::Text("SCORE: %d", static_cast<int>(score + timeSinceStart.elapsed_time().seconds()));
+    ImGui::End();
+
+
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::SetNextWindowPos({ 0,10.f });
+    ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
+    ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoMouseInputs);
+
+    imwindow = ImGui::GetCurrentWindow();
+    imwindow->FontWindowScale = 2.f;
+
+    ImGui::Text("Health: %f", static_cast<float>(player.get_component<player_comp>()->health));
+    ImGui::End();
 
 
     static float timeBuffer = 0.f;
@@ -187,27 +225,45 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     {
         timeBuffer -= spawninterval;
         spawninterval *= 0.95f;
-        //spawnEnemy();
+        spawnEnemy();
     }
-
-    ImGui::End();
 
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
     {
+        if (deltaTime > 1.f)
+            continue;
+
         direction = app::InputSystem::getMousePosition() - math::dvec2(.5);
-        //log::debug(direction);
-        if (math::abs(direction.x) < .1f)
+        if (math::abs(direction.x) < .05f)
             direction.x = 0.f;
-        if (math::abs(direction.y) < .1f)
+        if (math::abs(direction.y) < .05f)
             direction.y = 0.f;
 
         rotation& rot = ent.get_component<rotation>();
         rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, 0.f));
-        rot = math::slerp(rot, target, static_cast<float>(deltaTime) * 2.f);
+        rot = math::slerp(rot, target, static_cast<float>(deltaTime));
 
         if (ent.get_component<player_comp>()->shooting)
             shoot(ent);
+    }
+
+    targetId = MouseHover::getHoveredEntityId();
+    if (ecs::Registry::checkEntity(targetId))
+    {
+        if (ecs::Registry::getEntity(targetId).has_component<enemy_comp>())
+        {
+            target = ecs::Registry::getEntity(targetId);
+        }
+    }
+
+    if (target)
+    {
+        if (target.has_component<enemy_comp>())
+        {
+            position& retPos = reticle.get_component<position>();
+            retPos = target.get_component<position>();
+        }
     }
 
     ecs::filter<particle_emitter> emitterFilter;
@@ -224,8 +280,6 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
 void GameSystem::spawnEnemy()
 {
     static size_type i = 0;
-    static auto model = gfx::ModelCache::create_model("Enemy", fs::view("assets://models/ship/JamEnemy.glb"));
-    static auto material = gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
     auto enemy = createEntity("Enemy" + std::to_string(i++));
     enemyCount = i;
     auto [pos, rot, scal] = enemy.add_component<transform>();
@@ -233,9 +287,10 @@ void GameSystem::spawnEnemy()
     pos = math::sphericalRand(70.f);
     enemy.add_component<enemy_comp>();
     auto rb = enemy.add_component<rigidbody>();
-    enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
+    enemy.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ShipLit"), gfx::ModelCache::get_handle("Enemy") });
     rb->linearDrag = 1.1f;
     rb->setMass(.8f);
+
     auto col = enemy.add_component<collider>();
     col->layer = 2;
     col->ignoreMask = 1 | 2;
@@ -246,6 +301,13 @@ void GameSystem::roll(player_roll& axis)
     using namespace lgn::core;
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
+    {
+        rotation& rot = ent.get_component<rotation>();
+        rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
+    }
+
+    ecs::filter<position, rotation, scale, gfx::camera> cameraFilter;
+    for (auto& ent : cameraFilter)
     {
         rotation& rot = ent.get_component<rotation>();
         rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
@@ -324,8 +386,9 @@ void GameSystem::shoot(ecs::entity player)
         position& bulletPos = bullet.get_component<position>();
         rotation& bulletRot = bullet.get_component<rotation>();
         scale& bulletScal = bullet.get_component<scale>();
+        position& targetPos = target ? target.get_component<position>() : playerPos;
         bulletPos = playerPos.xyz() + playerRot.forward() * .5f;
-        bulletRot = playerRot;
+        bulletRot = rotation::lookat(bulletPos, targetPos, playerRot.up());
         bulletScal = scale(.3f, .3f, 1.5f);
 
         auto model = gfx::ModelCache::get_handle("Bullet");
@@ -336,6 +399,7 @@ void GameSystem::shoot(ecs::entity player)
 
         rigidbody& bulletRb = bullet.get_component<rigidbody>();
         rigidbody playerRb = player.get_component<rigidbody>();
+
         bulletRb.velocity = playerRb.velocity;
         bulletRb.setMass(.1f);
 
@@ -352,6 +416,8 @@ void GameSystem::onCollision(collision& event)
     //    event.first->name.empty() ? std::to_string(event.first->id) : event.first->name,
     //    event.second->name.empty() ? std::to_string(event.second->id) : event.second->name,
     //    event.normal.axis, event.normal.depth);
+
+    bool playerHit = false;
 
     ecs::entity other{ nullptr };
     ecs::entity bullet{ nullptr };
@@ -375,6 +441,7 @@ void GameSystem::onCollision(collision& event)
         {
             player_comp& playerComp = other.get_component<player_comp>();
             playerComp.health -= bulletComp.damge;
+            playerHit = true;
 
             if (playerComp.health <= 0.f)
             {
@@ -421,6 +488,21 @@ void GameSystem::onCollision(collision& event)
     rbA.addForce(normal * massParcentageB * energy);
     rbB.addForce(normal * -massParcentageA * energy);
 
+    math::vec3 reflectVel;
+    if (event.first.has_component<bullet_comp>())
+    {
+        reflectVel = rbA.velocity;
+    }
+    else if (event.second.has_component<bullet_comp>())
+    {
+        reflectVel = rbB.velocity;
+    }
+
+    if (playerHit)
+    {
+        position& bulletPos = bullet.get_component<position>();
+        //spawnBlasterBurn(bulletPos, reflectVel);
+    }
     //if (bullet)
     //    bullet.destroy();
 }
@@ -468,9 +550,9 @@ void GameSystem::spawnExplosion(ecs::entity ent)
     smokeEmitter.m_targetTime = 1.f;
     smokeEmitter.create_uniform<float>("minLifeTime", .4f);
     smokeEmitter.create_uniform<float>("maxLifeTime", .4f);
-    smokeEmitter.create_uniform<float>("scaleFactor", 5.f);
+    smokeEmitter.create_uniform<float>("scaleFactor", 2.f);
     smokeEmitter.create_uniform<uint>("frameCount", 16);
-    smokeEmitter.resize(100);
+    smokeEmitter.resize(40);
     smokeEmitter.localSpace = true;
     smokeEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Particle") , gfx::MaterialCache::get_material("Smoke") });
     smokeEmitter.add_policy<explosion_policy>();
@@ -485,9 +567,9 @@ void GameSystem::spawnExplosion(ecs::entity ent)
     explosionEmitter.m_targetTime = 1.f;
     explosionEmitter.create_uniform<float>("minLifeTime", .4f);
     explosionEmitter.create_uniform<float>("maxLifeTime", .4f);
-    explosionEmitter.create_uniform<float>("scaleFactor", 5.f);
+    explosionEmitter.create_uniform<float>("scaleFactor", 2.f);
     explosionEmitter.create_uniform<uint>("frameCount", 16);
-    explosionEmitter.resize(100);
+    explosionEmitter.resize(40);
     explosionEmitter.localSpace = true;
     explosionEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Particle") , gfx::MaterialCache::get_material("Explosion") });
     explosionEmitter.add_policy<explosion_policy>();
@@ -497,6 +579,32 @@ void GameSystem::spawnExplosion(ecs::entity ent)
     position pos = ent.get_component<position>();
     smokeParticles.get_component<position>() = pos;
     explosionParticles.get_component<position>() = pos;
+}
+
+void GameSystem::spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel)
+{
+    static size_type i = 0;
+    auto blastParticles = createEntity("Blast" + std::to_string(i));
+    blastParticles.add_component<transform>();
+    position& pos = blastParticles.get_component<position>();
+    pos = hitPoint;
+    particle_emitter& blastParticleEmitter = blastParticles.add_component<particle_emitter>();
+    blastParticleEmitter.set_spawn_rate(10);
+    blastParticleEmitter.set_spawn_interval(0.2f);
+    blastParticleEmitter.m_targetTime = 10.f;
+    blastParticleEmitter.create_uniform<float>("minLifeTime", .2f);
+    blastParticleEmitter.create_uniform<float>("maxLifeTime", 1.f);
+    blastParticleEmitter.create_uniform<scale>("initScale", scale(.1f, .1f, 1.f));
+    blastParticleEmitter.create_uniform<float>("scaleFactor", 1.f);
+    blastParticleEmitter.resize(40);
+    blastParticleEmitter.localSpace = true;
+    auto material = gfx::MaterialCache::get_material("Light");
+    material.set_param("color", math::colors::red);
+    material.set_param("intensity", 2.f);
+    blastParticleEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Bullet") , material });
+    blastParticleEmitter.add_policy<scale_lifetime_policy>();
+    blastParticleEmitter.add_policy<fountain_policy>(fountain_policy{ hitPoint, reflectVel });
+    player.add_child(blastParticles);
 }
 
 void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)

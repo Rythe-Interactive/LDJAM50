@@ -16,9 +16,9 @@ namespace legion::core
         NO_DTOR_RULE5_NOEXCEPT(orbital_policy);
         ~orbital_policy() = default;
 
-       double C_MASS = 10.f;
-       double P_MASS = 1.f;
-       double G_FORCE = 100.0f;
+        double C_MASS = 10.f;
+        double P_MASS = 1.f;
+        double G_FORCE = 100.0f;
 
         virtual void setup(particle_emitter& emitter) override;
         virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;
@@ -27,10 +27,12 @@ namespace legion::core
 
     struct [[no_reflect]] fountain_policy : public particle_policy<fountain_policy>
     {
+        math::vec3 initVel;
+        math::vec3 initPos;
         NO_DTOR_RULE5_NOEXCEPT(fountain_policy);
+        fountain_policy(math::vec3 initPos = math::vec3(0.f), math::vec3 initVel = math::vec3::up) : initPos(initPos), initVel(initVel) {}
         ~fountain_policy() = default;
 
-        float initForce;
 
         virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;
         virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
@@ -41,9 +43,9 @@ namespace legion::core
         NO_DTOR_RULE5_NOEXCEPT(scale_lifetime_policy);
         ~scale_lifetime_policy() = default;
 
-        virtual void setup(particle_emitter & emitter) override;
-        virtual void onInit(particle_emitter & emitter, size_type start, size_type end) override;
-        virtual void onUpdate(particle_emitter & emitter, float deltaTime, size_type count) override;
+        virtual void setup(particle_emitter& emitter) override;
+        virtual void onInit(particle_emitter& emitter, size_type start, size_type end) override;
+        virtual void onUpdate(particle_emitter& emitter, float deltaTime, size_type count) override;
     };
 
     struct [[no_reflect]] color_lifetime_policy : public particle_policy<color_lifetime_policy>

@@ -32,6 +32,7 @@ void CameraFollowSystem::fixedUpdate(lgn::time::span deltaTime)
 
         if (!follow.target)
             continue;
+
         ecs::entity player = follow.target;
         position playerPos = player.get_component<position>();
         rigidbody playerRb = player.get_component<rigidbody>();
@@ -41,10 +42,17 @@ void CameraFollowSystem::fixedUpdate(lgn::time::span deltaTime)
         rotation& cameraRot = camera.get_component<rotation>();
         rotation& playerRot = player.get_component<rotation>();
 
-        auto pos = playerTrans.to_world_matrix() * math::vec4(follow.targetOffset, 1.f);
-        auto maxLag = pos.xyz() + math::normalize(cameraPos - pos.xyz()) * follow.lagDistance;
-        cameraPos += playerRb.velocity * static_cast<float>(deltaTime) * 2.f;
-        cameraPos = math::clamp(cameraPos, pos.xyz(), maxLag);
-        cameraRot = rotation::lookat(pos, playerTrans.to_world_matrix() * math::vec4(0.f, .8f, 0.f, 1.f));
+        auto pos = (playerTrans.to_world_matrix() * math::vec4(follow.targetOffset, 1.f)).xyz();
+
+        cameraPos = math::lerp(cameraPos, pos, static_cast<float>(deltaTime));
+        auto maxLag = pos + math::normalize(cameraPos - pos) * follow.lagDistance;
+        cameraPos = math::clamp(cameraPos, pos, maxLag);
+        if (math::length(cameraPos - pos) < .1f)
+            cameraPos = pos;
+
+        auto rotTarget = rotation::lookat(pos, playerTrans.to_world_matrix() * math::vec4(math::vec3(0.f, .5f, 0.f), 1.f), playerRot.up());
+        cameraRot = math::slerp(cameraRot, rotTarget, static_cast<float>(deltaTime));
+        if (math::length(cameraRot - rotTarget) < .1f)
+            cameraRot = rotTarget;
     }
 }

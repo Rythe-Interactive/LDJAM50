@@ -79,15 +79,18 @@ namespace legion::core
     {
         static id_type posBufferId = nameHash("posBuffer");
         static id_type velBufferId = nameHash("velBuffer");
+        static id_type rotBufferId = nameHash("rotBuffer");
         auto& posBuffer = emitter.has_buffer<position>(posBufferId) ? emitter.get_buffer<position>(posBufferId) : emitter.create_buffer<position>("posBuffer");
         auto& velBuffer = emitter.has_buffer<velocity>(velBufferId) ? emitter.get_buffer<velocity>(velBufferId) : emitter.create_buffer<velocity>("velBuffer");
+        auto& rotBuffer = emitter.has_buffer<rotation>(rotBufferId) ? emitter.get_buffer<rotation>(rotBufferId) : emitter.create_buffer<rotation>("rotBuffer");
 
         for (size_type idx = start; idx < end; idx++)
         {
-            auto randpoint = math::diskRand(.2f);
-            posBuffer[idx] = math::vec3(randpoint.x, math::linearRand(0.f, 0.8f), randpoint.y);
-            auto direction = math::vec3::up /*+ math::normalize(math::vec3(math::linearRand(-1.f, 1.f), 0.f, math::linearRand(-1.f, 1.f)))*/;
-            velBuffer[idx] = direction * initForce;
+            auto randpoint = math::diskRand(math::atan(45.f));
+            posBuffer[idx] = initPos;
+            rotBuffer[idx] = rotation::lookat(initPos, initPos + math::normalize(initVel));
+            auto direction = math::normalize(rotBuffer[idx] * math::vec3(randpoint.x, randpoint.y, 0.f));
+            velBuffer[idx] = direction / 10.f;
         }
     }
 
@@ -98,7 +101,7 @@ namespace legion::core
         for (size_type idx = 0; idx < count; idx++)
         {
             posBuffer[idx] += velBuffer[idx] * deltaTime;
-            velBuffer[idx] += math::vec3(0.f, -0.10f, 0.f) * deltaTime;
+            //velBuffer[idx] += math::vec3(0.f, 0.f, 0.f) * deltaTime;
         }
     }
 #pragma endregion
@@ -135,7 +138,7 @@ namespace legion::core
         {
             for (size_type idx = 0; idx < count; idx++)
             {
-                scaleBuffer[idx] = initScale + scaleFactor - ((ageBuffer[idx].age / ageBuffer[idx].max) * scaleFactor);
+                scaleBuffer[idx] *= math::vec3(1.f - ((ageBuffer[idx].age / ageBuffer[idx].max)));
             }
         }
     }
@@ -317,7 +320,6 @@ namespace legion::core
         auto& steering = emitter.get_buffer<velocity>("steeringBuffer");
         auto& spatialGrid = emitter.get_buffer<std::vector<id_type>>("spatialGrid");
 
-        //auto& speed = emitter.get_uniform<float>("speed");
 
         for (size_type idx = 0; idx < count; idx++)
         {
@@ -333,7 +335,6 @@ namespace legion::core
             }
             auto avgPos = sumPos / neighborCount;
             steering[idx] += avgPos - posBuffer[idx];
-            //steering[idx] -= velBuffer[idx];
         }
     }
 #pragma endregion
@@ -364,7 +365,6 @@ namespace legion::core
                     force += seperationRadius / diff;
             }
             steering[idx] += force / neighborCount;
-            //steering[idx] -= velBuffer[idx];
         }
     }
 
@@ -386,7 +386,7 @@ namespace legion::core
         for (size_type idx = start; idx < end; idx++)
         {
             posBuffer[idx] = math::ballRand(1.f);
-            velBuffer[idx] = math::normalize(posBuffer[idx]) * 2.f;
+            velBuffer[idx] = math::normalize(posBuffer[idx]) * 3.f;
         }
     }
     void explosion_policy::onUpdate(particle_emitter& emitter, float deltaTime, size_type count)

@@ -36,7 +36,7 @@ namespace legion::rendering
         attachStage<SubmitStage>();
 
         PostProcessingStage::addEffect<Bloom>(-10);
-        PostProcessingStage::addEffect<DepthOfField>(-15);
+        //PostProcessingStage::addEffect<DepthOfField>(-15);
         PostProcessingStage::addEffect<Tonemapping>(-32);
         PostProcessingStage::addEffect<FXAA>(-64);
 
