@@ -35,14 +35,15 @@ class GameSystem final : public legion::System<GameSystem>
 {
 public:
     lgn::ecs::entity camera;
+    lgn::ecs::entity player;
     bool escaped = false;
-    float linearMovement = 150.f;
+    float linearMovement = 300.f;
     float radialMovement = 500.f;
     size_type enemyCount = 0;
     size_type maxEnemies = 500;
-
     time::timer timeSinceStart;
     float score = 0;
+    math::vec2 direction;
 
     void setup();
 
@@ -50,9 +51,7 @@ public:
 
     void spawnEnemy();
 
-    void pitch(player_pitch& axis);
     void roll(player_roll& axis);
-    void yaw(player_yaw& axis);
     void strafe(player_strafe& axis);
     void vertical(player_vertical& axis);
     void thrust(player_thrust& axis);

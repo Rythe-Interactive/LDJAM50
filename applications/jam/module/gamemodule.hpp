@@ -6,6 +6,7 @@
 #include "../systems/enemysystem.hpp"
 #include "../systems/gui_test.hpp"
 #include "../systems/physicssystem.hpp"
+#include "../systems/camerafollowsystem.hpp"
 
 class GameModule : public legion::Module
 {
@@ -27,5 +28,6 @@ public:
         reportSystem<GameSystem>();
         reportSystem<BulletSystem>();
         reportSystem<EnemySystem>();
+        reportSystem<CameraFollowSystem>();
     }
 };

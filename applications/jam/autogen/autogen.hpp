@@ -13,6 +13,8 @@
 #include "autogen_reflector_collider.hpp"
 #include "autogen_prototype_bullet_comp.hpp"
 #include "autogen_reflector_bullet_comp.hpp"
+#include "autogen_prototype_camerafollowcomp.hpp"
+#include "autogen_reflector_camerafollowcomp.hpp"
 #include "autogen_prototype_player_comp.hpp"
 #include "autogen_reflector_player_comp.hpp"
 #include "autogen_prototype_enemy_comp.hpp"

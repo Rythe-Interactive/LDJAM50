@@ -129,6 +129,7 @@
     <ClCompile Include="defaults\defaultpolicies.cpp" />
     <ClCompile Include="source.cpp" />
     <ClCompile Include="systems\bulletsystem.cpp" />
+    <ClCompile Include="systems\camerafollowsystem.cpp" />
     <ClCompile Include="systems\enemysystem.cpp" />
     <ClCompile Include="systems\gamesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="broadphase\broadphase.hpp" />
     <ClInclude Include="colliders\collisionshape.hpp" />
     <ClInclude Include="components\bulletcomp.hpp" />
+    <ClInclude Include="components\camerafollowcomp.hpp" />
     <ClInclude Include="components\collider.hpp" />
     <ClInclude Include="components\components.hpp" />
     <ClInclude Include="components\enemycomp.hpp" />
@@ -156,6 +158,7 @@
     <ClInclude Include="renderstages\mousehover.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="systems\bulletsystem.hpp" />
+    <ClInclude Include="systems\camerafollowsystem.hpp" />
     <ClInclude Include="systems\CustomSystem.hpp">
       <SubType>
       </SubType>

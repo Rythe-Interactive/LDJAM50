@@ -4,3 +4,4 @@
 #include "enemycomp.hpp"
 #include "collider.hpp"
 #include "rigidbody.hpp"
+#include "camerafollowcomp.hpp"

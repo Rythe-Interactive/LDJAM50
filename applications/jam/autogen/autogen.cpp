@@ -9,6 +9,8 @@
 #include "autogen_reflector_collider.inl"
 #include "autogen_prototype_bullet_comp.inl"
 #include "autogen_reflector_bullet_comp.inl"
+#include "autogen_prototype_camerafollowcomp.inl"
+#include "autogen_reflector_camerafollowcomp.inl"
 #include "autogen_prototype_player_comp.inl"
 #include "autogen_reflector_player_comp.inl"
 #include "autogen_prototype_enemy_comp.inl"

@@ -21,10 +21,12 @@ void GameSystem::setup()
         pipeline->attachStage<ImGuiStage>();
     }
 
+    initInput();
+
     ImGuiStage::addGuiRender<GameSystem, &GameSystem::onGUI>(this);
 
     app::window& window = ecs::world.get_component<app::window>();
-    window.enableCursor(false);
+    window.enableCursor(true);
     window.show();
     app::context_guard guard(window);
 
@@ -49,8 +51,6 @@ void GameSystem::setup()
         audio::AudioSegmentCache::createAudioSegment("LaserShot", fs::view("assets://audio/fx/Laser_Shoot.wav"));
         audio::AudioSegmentCache::createAudioSegment("BGMusic", fs::view("assets://audio/background.mp3"));
 
-        initInput();
-
         material = gfx::MaterialCache::create_material("PlayerLight", fs::view("assets://shaders/light.shs"));
         material = gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
         auto model = gfx::ModelCache::create_model("Ship", fs::view("assets://models/ship/JamShip.glb"));
@@ -71,25 +71,31 @@ void GameSystem::setup()
         material.set_param("useMetallicTex", true);
 
 
-        auto player = createEntity("Player");
+        player = createEntity("Player");
         player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
-        auto [pos, rot, scal] = player.add_component<transform>();
+        auto [playerPos, playerRot, playerScal] = player.add_component<transform>();
         player.add_component<audio::audio_listener>();
         player.add_component<player_comp>();
         auto rb = player.add_component<rigidbody>();
-        rb->linearDrag = .8f;
+        rb->linearDrag = .2f;
         rb->setMass(.1f);
 
-        auto audioSource = player.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("BGMusic")).get();
+        audio::audio_source& audioSource = player.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("BGMusic"));
         audioSource.setLooping(true);
-        audioSource.play();
+        //audioSource.play();
 
-        auto camera_ent = createEntity("Camera");
-        camera_ent.add_component<transform>(position(0.f, 2.f, -8.f), rotation::lookat(math::vec3(0.f, 2.f, -8.f), pos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
+        camera = createEntity("Camera");
+        camera.add_component<camera_follow>();
+        camera_follow& follow = camera.get_component<camera_follow>();
+        follow.target = player;
+        follow.targetOffset = position(0.f, 2.f, -8.f);
+        follow.lagDistance = 1.f;
+        camera.add_component<transform>(follow.targetOffset, rotation::lookat(follow.targetOffset, playerPos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
         rendering::camera cam;
         cam.set_projection(60.f, 0.001f, 1000.f);
-        camera_ent.add_component<gfx::camera>(cam);
-        player.add_child(camera_ent);
+        camera.add_component<gfx::camera>(cam);
+
+
         auto col = player.add_component<collider>();
         col->layer = 4;
         col->ignoreMask = 4;
@@ -143,12 +149,12 @@ void GameSystem::setup()
     }
 
     //SpawnEnemies
-    {
-        for (size_type i = 0; i < 100; i++)
-        {
-            spawnEnemy();
-        }
-    }
+    //{
+    //    for (size_type i = 0; i < 100; i++)
+    //    {
+    //        spawnEnemy();
+    //    }
+    //}
 
     bindToEvent<collision, &GameSystem::onCollision>();
     timeSinceStart.start();
@@ -181,7 +187,7 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     {
         timeBuffer -= spawninterval;
         spawninterval *= 0.95f;
-        spawnEnemy();
+        //spawnEnemy();
     }
 
     ImGui::End();
@@ -189,6 +195,17 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     ecs::filter<position, rotation, scale, player_comp> playerFilter;
     for (auto& ent : playerFilter)
     {
+        direction = app::InputSystem::getMousePosition() - math::dvec2(.5);
+        //log::debug(direction);
+        if (math::abs(direction.x) < .1f)
+            direction.x = 0.f;
+        if (math::abs(direction.y) < .1f)
+            direction.y = 0.f;
+
+        rotation& rot = ent.get_component<rotation>();
+        rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, 0.f));
+        rot = math::slerp(rot, target, static_cast<float>(deltaTime) * 2.f);
+
         if (ent.get_component<player_comp>()->shooting)
             shoot(ent);
     }
@@ -224,30 +241,6 @@ void GameSystem::spawnEnemy()
     col->ignoreMask = 1 | 2;
     col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
 }
-
-void GameSystem::pitch(player_pitch& axis)
-{
-    if (escaped)
-        return;
-
-    using namespace lgn::core;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        math::mat3 rotMat = math::toMat3(rot);
-        math::vec3 right = rotMat * math::vec3::right;
-        math::vec3 fwd = math::normalize(math::cross(right, math::vec3::up));
-        math::vec3 up = rotMat * math::vec3::up;
-        float angle = math::orientedAngle(fwd, up, right);
-
-        angle += axis.value * axis.input_delta * radialMovement;
-
-        up = math::mat3(math::axisAngleMatrix(right, angle)) * fwd;
-        fwd = math::cross(right, up);
-        rot = (rotation)math::conjugate(math::toQuat(math::lookAt(math::vec3::zero, fwd, up)));
-    }
-}
 void GameSystem::roll(player_roll& axis)
 {
     using namespace lgn::core;
@@ -256,19 +249,6 @@ void GameSystem::roll(player_roll& axis)
     {
         rotation& rot = ent.get_component<rotation>();
         rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
-    }
-}
-void GameSystem::yaw(player_yaw& axis)
-{
-    if (escaped)
-        return;
-
-    using namespace lgn::core;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rot *= math::angleAxis(axis.value * axis.input_delta * radialMovement, math::vec3::up);
     }
 }
 void GameSystem::strafe(player_strafe& axis)
@@ -455,10 +435,6 @@ void GameSystem::initInput()
     app::InputSystem::createBinding<exit_action>(app::inputmap::method::ESCAPE);
 
     app::InputSystem::createBinding<player_shoot>(app::inputmap::method::MOUSE_LEFT);
-    app::InputSystem::createBinding<player_pitch>(app::inputmap::method::MOUSE_Y, 1.f);
-    app::InputSystem::createBinding<player_pitch>(app::inputmap::method::MOUSE_Y, -1.f);
-    app::InputSystem::createBinding<player_yaw>(app::inputmap::method::MOUSE_X, 1.f);
-    app::InputSystem::createBinding<player_yaw>(app::inputmap::method::MOUSE_X, -1.f);
     app::InputSystem::createBinding<player_roll>(app::inputmap::method::Q, 1.f);
     app::InputSystem::createBinding<player_roll>(app::inputmap::method::E, -1.f);
     app::InputSystem::createBinding<player_thrust>(app::inputmap::method::W, 1.f);
@@ -468,10 +444,7 @@ void GameSystem::initInput()
     app::InputSystem::createBinding<player_vertical>(app::inputmap::method::LEFT_SHIFT, -1.f);
     app::InputSystem::createBinding<player_vertical>(app::inputmap::method::SPACE, 1.f);
 
-
-    bindToEvent<player_pitch, &GameSystem::pitch>();
     bindToEvent<player_roll, &GameSystem::roll>();
-    bindToEvent<player_yaw, &GameSystem::yaw>();
     bindToEvent<player_strafe, &GameSystem::strafe>();
     bindToEvent<player_vertical, &GameSystem::vertical>();
     bindToEvent<player_thrust, &GameSystem::thrust>();
