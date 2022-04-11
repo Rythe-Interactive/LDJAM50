@@ -62,6 +62,7 @@ void GameSystem::setup()
         }
 
         {
+            gfx::MaterialCache::create_material("ForceField", fs::view("assets:/shaders/forcefield.shs")).set_variant("transparent");
             gfx::MaterialCache::create_material("ShipLit", fs::view("engine://shaders/default_lit.shs"));
             texture_import_settings settings = gfx::default_texture_settings;
             settings.mag = gfx::texture_mipmap::nearest;
@@ -80,11 +81,8 @@ void GameSystem::setup()
         }
 
         {
-            gfx::MaterialCache::create_material("TargetReticle", fs::view("assets://shaders/billboard.shs")).set_param("fixedSize", true);
+            gfx::MaterialCache::create_material("TargetReticle", fs::view("assets://shaders/crosshair.shs"));
             gfx::MaterialCache::get_material("TargetReticle").set_param("_texture", gfx::TextureCache::create_texture(fs::view("assets://textures/TargetReticle/TargetReticle.png")));
-            gfx::MaterialCache::get_material("TargetReticle").set_variant("depth_only");
-            gfx::MaterialCache::get_material("TargetReticle").set_param("_texture", gfx::TextureCache::create_texture(fs::view("assets://textures/TargetReticle/TargetReticle.png")));
-            gfx::MaterialCache::get_material("TargetReticle").set_variant("default");
         }
 
         {
@@ -101,6 +99,13 @@ void GameSystem::setup()
         rb->linearDrag = .2f;
         rb->setMass(.1f);
 
+        //auto forceField = createEntity();
+        //auto [pos, rot, scal] = forceField.add_component<transform>();
+        //scal = scale(3.f);
+
+        //forceField.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ForceField"),  gfx::ModelCache::get_handle("Bullet") });
+        //player.add_child(forceField);
+
         audio::audio_source& audioSource = player.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("BGMusic"));
         audioSource.setLooping(true);
         //audioSource.play();
@@ -109,9 +114,10 @@ void GameSystem::setup()
         camera.add_component<camera_follow>();
         camera_follow& follow = camera.get_component<camera_follow>();
         follow.target = player;
-        follow.targetOffset = position(0.f, 2.f, -8.f);
+        follow.targetOffset = position(0.f, 0.9f, -8.f);
+        follow.lookAtOffset = position(0.f, 0.9f, 10.f);
         follow.lagDistance = 1.f;
-        camera.add_component<transform>(follow.targetOffset, rotation::lookat(follow.targetOffset, playerPos->xyz() + math::vec3(0.f, 1.f, 0.f)), scale());
+        camera.add_component<transform>(follow.targetOffset, rotation::lookat(follow.targetOffset, playerPos->xyz() + follow.lookAtOffset), scale());
         rendering::camera cam;
         cam.set_projection(60.f, 0.001f, 1000.f);
         camera.add_component<gfx::camera>(cam);
@@ -150,8 +156,10 @@ void GameSystem::setup()
         auto explosionArray = gfx::TextureCache::create_texture_array("explosion", textures);
         gfx::MaterialCache::create_material("Explosion", fs::view("assets://shaders/particle.shs"));
         gfx::MaterialCache::get_material("Explosion").set_param("_texture", explosionArray);
+        gfx::MaterialCache::get_material("Explosion").set_param("frameCount", 16);
         gfx::MaterialCache::get_material("Explosion").set_variant("depth_only");
         gfx::MaterialCache::get_material("Explosion").set_param("_texture", explosionArray);
+        gfx::MaterialCache::get_material("Explosion").set_param("frameCount", 16);
         gfx::MaterialCache::get_material("Explosion").set_variant("default");
     }
     textures.clear();
@@ -163,8 +171,10 @@ void GameSystem::setup()
         auto smokeArray = gfx::TextureCache::create_texture_array("smoke", textures);
         gfx::MaterialCache::create_material("Smoke", fs::view("assets://shaders/particle.shs"));
         gfx::MaterialCache::get_material("Smoke").set_param("_texture", smokeArray);
+        gfx::MaterialCache::get_material("Smoke").set_param("frameCount", 16);
         gfx::MaterialCache::get_material("Smoke").set_variant("depth_only");
         gfx::MaterialCache::get_material("Smoke").set_param("_texture", smokeArray);
+        gfx::MaterialCache::get_material("Smoke").set_param("frameCount", 16);
         gfx::MaterialCache::get_material("Smoke").set_variant("default");
     }
 
@@ -184,6 +194,38 @@ void GameSystem::setup()
 
     bindToEvent<collision, &GameSystem::onCollision>();
     timeSinceStart.start();
+
+    createProcess<&GameSystem::fixedUpdate>("Update", 0.02f);
+}
+
+void GameSystem::fixedUpdate(lgn::time::span deltaTime)
+{
+    if (!player)
+        return;
+
+    direction = app::InputSystem::getMousePosition() - math::dvec2(.5);
+    if (math::abs(direction.x) < .05f)
+        direction.x = 0.f;
+    if (math::abs(direction.y) < .05f)
+        direction.y = 0.f;
+
+    rotation& rot = player.get_component<rotation>();
+    rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, 0.f));
+    rot = math::slerp(rot, target, static_cast<float>(deltaTime));
+    rot *= math::angleAxis(rollValue * radialMovement, math::vec3::forward);
+
+    rigidbody& rb = player.get_component<rigidbody>();
+    auto force = rot.right() * strafeValue * linearMovement;
+    force += rot.up() * verticalValue * linearMovement;
+    force += rot.forward() * thrustValue * linearMovement;
+    rb.addForce(force);
+
+    shootBuffer += deltaTime;
+    if (player.get_component<player_comp>()->shooting && shootBuffer > shootInterval)
+    {
+        shootBuffer = 0.0f;
+        shoot(player);
+    }
 }
 
 void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_MAYBEUNUSED const gfx::camera::camera_input& camInput, time::span deltaTime)
@@ -225,27 +267,7 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     {
         timeBuffer -= spawninterval;
         spawninterval *= 0.95f;
-        spawnEnemy();
-    }
-
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        if (deltaTime > 1.f)
-            continue;
-
-        direction = app::InputSystem::getMousePosition() - math::dvec2(.5);
-        if (math::abs(direction.x) < .05f)
-            direction.x = 0.f;
-        if (math::abs(direction.y) < .05f)
-            direction.y = 0.f;
-
-        rotation& rot = ent.get_component<rotation>();
-        rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, 0.f));
-        rot = math::slerp(rot, target, static_cast<float>(deltaTime));
-
-        if (ent.get_component<player_comp>()->shooting)
-            shoot(ent);
+        //spawnEnemy();
     }
 
     targetId = MouseHover::getHoveredEntityId();
@@ -254,10 +276,18 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
         if (ecs::Registry::getEntity(targetId).has_component<enemy_comp>())
         {
             target = ecs::Registry::getEntity(targetId);
+            targeting = true;
         }
     }
+    else
+    {
+        targeting = false;
+        position& retPos = reticle.get_component<position>();
+        retPos = camera.get_component<position>();
+        retPos = retPos - position(0.f, 0.f, 1.f);
+    }
 
-    if (target)
+    if (target && targeting)
     {
         if (target.has_component<enemy_comp>())
         {
@@ -296,58 +326,22 @@ void GameSystem::spawnEnemy()
     col->ignoreMask = 1 | 2;
     col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 2.5f);
 }
+
 void GameSystem::roll(player_roll& axis)
 {
-    using namespace lgn::core;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
-    }
-
-    ecs::filter<position, rotation, scale, gfx::camera> cameraFilter;
-    for (auto& ent : cameraFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rot *= math::angleAxis(axis.value * axis.input_delta, math::vec3::forward);
-    }
+    rollValue = axis.value * axis.input_delta;
 }
 void GameSystem::strafe(player_strafe& axis)
 {
-    using namespace lgn;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rigidbody& rb = ent.get_component<rigidbody>();
-        auto force = rot.right() * axis.value * axis.input_delta * linearMovement;
-        rb.addForce(force);
-    }
+    strafeValue = axis.value * axis.input_delta;
 }
 void GameSystem::vertical(player_vertical& axis)
 {
-    using namespace lgn;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rigidbody& rb = ent.get_component<rigidbody>();
-        auto force = rot.up() * axis.value * axis.input_delta * linearMovement;
-        rb.addForce(force);
-    }
+    verticalValue = axis.value * axis.input_delta;
 }
 void GameSystem::thrust(player_thrust& axis)
 {
-    using namespace lgn;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
-    for (auto& ent : playerFilter)
-    {
-        rotation& rot = ent.get_component<rotation>();
-        rigidbody& rb = ent.get_component<rigidbody>();
-        auto force = rot.forward() * axis.value * axis.input_delta * linearMovement;
-        rb.addForce(force);
-    }
+    thrustValue = axis.value * axis.input_delta;
 }
 void GameSystem::onShoot(player_shoot& action)
 {
@@ -362,6 +356,7 @@ void GameSystem::onShoot(player_shoot& action)
             ent.get_component<player_comp>()->shooting = false;
     }
 }
+
 void GameSystem::shoot(ecs::entity player)
 {
     using namespace lgn;
@@ -386,10 +381,15 @@ void GameSystem::shoot(ecs::entity player)
         position& bulletPos = bullet.get_component<position>();
         rotation& bulletRot = bullet.get_component<rotation>();
         scale& bulletScal = bullet.get_component<scale>();
-        position& targetPos = target ? target.get_component<position>() : playerPos;
+        position targetPos;
+        if (target && targeting)
+            targetPos = target.get_component<position>();
+        else
+            targetPos = (position)(playerPos.xyz() + playerRot.forward());
+
         bulletPos = playerPos.xyz() + playerRot.forward() * .5f;
         bulletRot = rotation::lookat(bulletPos, targetPos, playerRot.up());
-        bulletScal = scale(.3f, .3f, 1.5f);
+        bulletScal = scale(.2f, .2f, 1.5f);
 
         auto model = gfx::ModelCache::get_handle("Bullet");
         auto material = gfx::MaterialCache::get_material("PlayerLight");
@@ -440,7 +440,7 @@ void GameSystem::onCollision(collision& event)
         if (other.has_component<player_comp>())
         {
             player_comp& playerComp = other.get_component<player_comp>();
-            playerComp.health -= bulletComp.damge;
+            //playerComp.health -= bulletComp.damge;
             playerHit = true;
 
             if (playerComp.health <= 0.f)
@@ -480,31 +480,37 @@ void GameSystem::onCollision(collision& event)
     float massParcentageA = (1.f / rbA.inverseMass) / cumulativeMass;
     float massParcentageB = 1.f - massParcentageA;
 
-    posA += mtv * massParcentageB;
-    posB -= mtv * massParcentageA;
-
     float energy = math::dot(rbA.velocity, -normal) + math::dot(rbB.velocity, normal);
-
-    rbA.addForce(normal * massParcentageB * energy);
-    rbB.addForce(normal * -massParcentageA * energy);
 
     math::vec3 reflectVel;
     if (event.first.has_component<bullet_comp>())
     {
-        reflectVel = rbA.velocity;
+        posA += mtv * massParcentageB;
+
+        rbA.addForce(normal * -massParcentageA * energy);
+        reflectVel = math::normalize(posA);
+
     }
     else if (event.second.has_component<bullet_comp>())
     {
-        reflectVel = rbB.velocity;
+        posB -= mtv * massParcentageA;
+        rbB.addForce(normal * massParcentageB * energy);
+        reflectVel = math::normalize(posB);
+    }
+    else
+    {
+        rbA.addForce(normal * massParcentageB * energy);
+        rbB.addForce(normal * -massParcentageA * energy);
     }
 
     if (playerHit)
     {
         position& bulletPos = bullet.get_component<position>();
         //spawnBlasterBurn(bulletPos, reflectVel);
+        if (bullet)
+            bullet.destroy();
     }
-    //if (bullet)
-    //    bullet.destroy();
+
 }
 
 void GameSystem::initInput()
@@ -550,8 +556,8 @@ void GameSystem::spawnExplosion(ecs::entity ent)
     smokeEmitter.m_targetTime = 1.f;
     smokeEmitter.create_uniform<float>("minLifeTime", .4f);
     smokeEmitter.create_uniform<float>("maxLifeTime", .4f);
-    smokeEmitter.create_uniform<float>("scaleFactor", 2.f);
-    smokeEmitter.create_uniform<uint>("frameCount", 16);
+    smokeEmitter.create_uniform<scale>("initScale", scale(2.f));
+    smokeEmitter.create_uniform<int>("frameCount", 16);
     smokeEmitter.resize(40);
     smokeEmitter.localSpace = true;
     smokeEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Particle") , gfx::MaterialCache::get_material("Smoke") });
@@ -567,8 +573,8 @@ void GameSystem::spawnExplosion(ecs::entity ent)
     explosionEmitter.m_targetTime = 1.f;
     explosionEmitter.create_uniform<float>("minLifeTime", .4f);
     explosionEmitter.create_uniform<float>("maxLifeTime", .4f);
-    explosionEmitter.create_uniform<float>("scaleFactor", 2.f);
-    explosionEmitter.create_uniform<uint>("frameCount", 16);
+    explosionEmitter.create_uniform<scale>("initScale", scale(2.f));
+    explosionEmitter.create_uniform<int>("frameCount", 16);
     explosionEmitter.resize(40);
     explosionEmitter.localSpace = true;
     explosionEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Particle") , gfx::MaterialCache::get_material("Explosion") });
@@ -584,11 +590,7 @@ void GameSystem::spawnExplosion(ecs::entity ent)
 void GameSystem::spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel)
 {
     static size_type i = 0;
-    auto blastParticles = createEntity("Blast" + std::to_string(i));
-    blastParticles.add_component<transform>();
-    position& pos = blastParticles.get_component<position>();
-    pos = hitPoint;
-    particle_emitter& blastParticleEmitter = blastParticles.add_component<particle_emitter>();
+    particle_emitter& blastParticleEmitter = player.add_component<particle_emitter>();
     blastParticleEmitter.set_spawn_rate(10);
     blastParticleEmitter.set_spawn_interval(0.2f);
     blastParticleEmitter.m_targetTime = 10.f;
@@ -603,8 +605,8 @@ void GameSystem::spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel)
     material.set_param("intensity", 2.f);
     blastParticleEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Bullet") , material });
     blastParticleEmitter.add_policy<scale_lifetime_policy>();
-    blastParticleEmitter.add_policy<fountain_policy>(fountain_policy{ hitPoint, reflectVel });
-    player.add_child(blastParticles);
+    transform trans = player.get_component<transform>();
+    blastParticleEmitter.add_policy<fountain_policy>(fountain_policy{ (trans.to_world_matrix() * math::vec4(hitPoint,1.f)).xyz(), reflectVel });
 }
 
 void GameSystem::onAutoExposureSwitch(auto_exposure_action& event)

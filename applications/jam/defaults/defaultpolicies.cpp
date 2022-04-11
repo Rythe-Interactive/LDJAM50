@@ -86,11 +86,11 @@ namespace legion::core
 
         for (size_type idx = start; idx < end; idx++)
         {
-            auto randpoint = math::diskRand(math::atan(45.f));
+            auto randpoint = math::diskRand(math::atan(22.5f));
             posBuffer[idx] = initPos;
             rotBuffer[idx] = rotation::lookat(initPos, initPos + math::normalize(initVel));
             auto direction = math::normalize(rotBuffer[idx] * math::vec3(randpoint.x, randpoint.y, 0.f));
-            velBuffer[idx] = direction / 10.f;
+            velBuffer[idx] = direction;
         }
     }
 

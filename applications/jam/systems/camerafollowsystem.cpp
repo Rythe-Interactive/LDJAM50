@@ -27,6 +27,7 @@ void CameraFollowSystem::fixedUpdate(lgn::time::span deltaTime)
     using namespace lgn;
     for (auto& camera : cameras)
     {
+
         gfx::camera& cam = camera.get_component<gfx::camera>();
         camera_follow& follow = camera.get_component<camera_follow>();
 
@@ -42,17 +43,16 @@ void CameraFollowSystem::fixedUpdate(lgn::time::span deltaTime)
         rotation& cameraRot = camera.get_component<rotation>();
         rotation& playerRot = player.get_component<rotation>();
 
-        auto pos = (playerTrans.to_world_matrix() * math::vec4(follow.targetOffset, 1.f)).xyz();
+        auto targetRot = rotation::lookat(cameraPos, playerTrans.to_world_matrix() * math::vec4(follow.lookAtOffset, 1.f), playerRot.up());
+        cameraRot = math::slerp(cameraRot, targetRot, static_cast<float>(deltaTime) * 7.f);
+        if (math::length(cameraRot - targetRot) < .02f)
+            cameraRot = targetRot;
 
-        cameraPos = math::lerp(cameraPos, pos, static_cast<float>(deltaTime));
-        auto maxLag = pos + math::normalize(cameraPos - pos) * follow.lagDistance;
-        cameraPos = math::clamp(cameraPos, pos, maxLag);
-        if (math::length(cameraPos - pos) < .1f)
-            cameraPos = pos;
-
-        auto rotTarget = rotation::lookat(pos, playerTrans.to_world_matrix() * math::vec4(math::vec3(0.f, .5f, 0.f), 1.f), playerRot.up());
-        cameraRot = math::slerp(cameraRot, rotTarget, static_cast<float>(deltaTime));
-        if (math::length(cameraRot - rotTarget) < .1f)
-            cameraRot = rotTarget;
+        auto targetPos = (playerTrans.to_world_matrix() * math::vec4(follow.targetOffset, 1.f)).xyz();
+        cameraPos = math::lerp(cameraPos, targetPos, static_cast<float>(deltaTime) * 4.f);
+        if (math::length(cameraPos - targetPos) < .02f)
+            cameraPos = targetPos;
+        else
+            cameraPos = targetPos + math::normalize(cameraPos - targetPos) * math::clamp(math::distance(cameraPos, targetPos), 0.f, follow.lagDistance);
     }
 }

@@ -39,17 +39,25 @@ public:
     lgn::ecs::entity reticle;
     lgn::ecs::entity target;
     id_type targetId;
-    bool escaped = false;
-    float linearMovement = 300.f;
-    float radialMovement = 500.f;
     size_type enemyCount = 0;
     size_type maxEnemies = 500;
     time::timer timeSinceStart;
-    float score = 0;
     math::vec2 direction;
+    float shootInterval = .125f;
+    float shootBuffer = 0.f;
+    float score = 0;
+    float linearMovement = 300.f;
+    float radialMovement = 10.f;
+    float strafeValue;
+    float thrustValue;
+    float rollValue;
+    float verticalValue;
+
+    bool escaped = false;
+    bool targeting = false;
 
     void setup();
-
+    void fixedUpdate(lgn::time::span deltaTime);
     void onGUI(app::window& context, gfx::camera& cam, const gfx::camera::camera_input& camInput, time::span deltaTime);
 
     void spawnEnemy();

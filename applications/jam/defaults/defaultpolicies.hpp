@@ -27,8 +27,8 @@ namespace legion::core
 
     struct [[no_reflect]] fountain_policy : public particle_policy<fountain_policy>
     {
-        math::vec3 initVel;
         math::vec3 initPos;
+        math::vec3 initVel;
         NO_DTOR_RULE5_NOEXCEPT(fountain_policy);
         fountain_policy(math::vec3 initPos = math::vec3(0.f), math::vec3 initVel = math::vec3::up) : initPos(initPos), initVel(initVel) {}
         ~fountain_policy() = default;

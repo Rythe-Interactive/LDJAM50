@@ -1,0 +1,51 @@
+#version 450
+
+variant(default)
+{
+    #state BLEND OFF
+    #state CULL BACK
+}
+
+variant(transparent)
+{
+    #state BLEND TRANSPARENT
+    #state DEPTH_WRITE OFF
+}
+
+variant(depth only)
+{
+    #state BLEND TRANSPARENT
+    #define DEPTH_ONLY
+}
+
+generate(fragment, vertex)
+
+#include <stdio.shinc>
+#include <lighting.shinc>
+
+shader(vertex)
+{
+    void main(void)
+    {
+        gl_Position = ModelToScreenSpacePosition(position);
+        PropagateStdIO();
+    }
+}
+
+shader(fragment)
+{                                                                                                          
+    void main(void)                                                                                         
+    {                                
+        vec3 V = normalize(gl_FragCoord.xyz);
+        vec3 N = normalize(stdio(normal));
+        float fresnel = pow(1.0-dot(V,N),5.0);                                                           
+        vec4 fresnel_color = vec4(fresnel);
+        #if defined(DEPTH_ONLY)
+            fragment_color = vec4(0.0);
+        #else 
+            fragment_color = fresnel_color;
+        #endif
+        fragment_overdraw = fresnel_color;                                                           
+    }
+}
+

@@ -10,8 +10,8 @@ namespace legion::rendering
         if (!emitter.has_buffer<float>("frameID"))
             emitter.create_buffer<float>("frameID");
 
-        if (!emitter.has_uniform<uint>("frameCount"))
-            emitter.create_uniform<uint>("frameCount");
+        if (!emitter.has_uniform<int>("frameCount"))
+            emitter.create_uniform<int>("frameCount");
     }
 
     void flipbook_policy::onInit(particle_emitter& emitter,size_type start, size_type end)
@@ -23,13 +23,12 @@ namespace legion::rendering
     {
         auto& frameIDBuffer = emitter.get_buffer<float>("frameID");
         auto& ageBuffer = emitter.get_buffer<life_time>("lifetimeBuffer");
-        auto& frameCount = emitter.get_uniform<uint>("frameCount");
+        auto& frameCount = emitter.get_uniform<int>("frameCount");
 
         for (size_type idx = 0; idx < count; idx++)
         {
             auto& lifeTime = ageBuffer[idx];
-            frameIDBuffer[idx] = math::clamp(((lifeTime.age / lifeTime.max) * frameCount), 0.f, frameCount - 1.f);
+            frameIDBuffer[idx] = math::clamp((lifeTime.age / lifeTime.max) * frameCount, 0.f, frameCount - 1.f);
         }
-
     }
 }

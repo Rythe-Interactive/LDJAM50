@@ -101,6 +101,12 @@ class SpacialHash final : public BroadPhase
             if (max.z < 0)
                 max.z--;
 
+            //if (math::abs(max.x) > 100000.f || math::abs(max.y) > 100000.f || math::abs(max.z) > 100000.f)
+            //{
+            //    log::error("Max is a crazy number boi!");
+            //    return m_cache;
+            //}
+
             for (auto x = min.x; x <= max.x; x++)
                 for (auto y = min.y; y <= max.y; y++)
                     for (auto z = min.z; z <= max.z; z++)

@@ -4,35 +4,11 @@
 using namespace legion;
 
 id_type MouseHover::m_hoveredEntityId = invalid_id;
-//lgn::gfx::framebuffer MouseHover::m_fbo;
-//lgn::gfx::texture_handle MouseHover::m_entityIdTexture;
-//lgn::math::ivec2 MouseHover::m_framebufferSize;
 
 id_type MouseHover::getHoveredEntityId() noexcept
 {
     return m_hoveredEntityId;
 }
-
-//id_type MouseHover::getEntityIdAtPosition(legion::core::math::vec2 mousePos)
-//{
-//    using namespace rendering;
-//    auto& texture = m_entityIdTexture.get_texture();
-//    glBindTexture(static_cast<GLenum>(texture.type), texture.textureId);
-//
-//    glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
-//    math::color hoveredColor = math::colors::transparent;
-//    mousePos *= math::dvec2(m_framebufferSize);
-//    glReadPixels(mousePos.x, mousePos.y, 1, 1, GL_RGBA, GL_FLOAT, &hoveredColor);
-//
-//    glBindTexture(static_cast<GLenum>(texture.type), 0);
-//    m_fbo.release();
-//
-//    id_type r = static_cast<id_type>(math::iround<float, int64>(hoveredColor.r * 65535.f));
-//    id_type g = static_cast<id_type>(math::iround<float, int64>(hoveredColor.g * 65535.f));
-//    id_type b = static_cast<id_type>(math::iround<float, int64>(hoveredColor.b * 65535.f));
-//    id_type a = static_cast<id_type>(math::iround<float, int64>(hoveredColor.a * 65535.f));
-//    return m_hoveredEntityId = r | (g << 16ull) | (b << 32ull) | (a << 48ull);
-//}
 
 void MouseHover::setup(app::window& context)
 {
@@ -269,7 +245,6 @@ void MouseHover::render(app::window& context, gfx::camera& cam, const gfx::camer
 
     auto& texture = m_entityIdTexture.get_texture();
     glBindTexture(static_cast<GLenum>(texture.type), texture.textureId);
-
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
     math::color hoveredColor = math::colors::transparent;
 
@@ -277,16 +252,20 @@ void MouseHover::render(app::window& context, gfx::camera& cam, const gfx::camer
     normalizedMousePos.y = 1.0 - normalizedMousePos.y;
 
     auto mousePos = math::ivec2(normalizedMousePos * math::dvec2(m_framebufferSize));
-    glReadPixels(mousePos.x, mousePos.y, 1, 1, GL_RGBA, GL_FLOAT, &hoveredColor);
 
-    glBindTexture(static_cast<GLenum>(texture.type), 0);
-    m_fbo.release();
+    glReadPixels((m_framebufferSize.x / 2.f), (m_framebufferSize.y / 2.f), 1, 1, GL_RGBA, GL_FLOAT, &hoveredColor);
 
     id_type r = static_cast<id_type>(math::iround<float, int64>(hoveredColor.r * 65535.f));
     id_type g = static_cast<id_type>(math::iround<float, int64>(hoveredColor.g * 65535.f));
     id_type b = static_cast<id_type>(math::iround<float, int64>(hoveredColor.b * 65535.f));
     id_type a = static_cast<id_type>(math::iround<float, int64>(hoveredColor.a * 65535.f));
     m_hoveredEntityId = r | (g << 16ull) | (b << 32ull) | (a << 48ull);
+
+    if (!ecs::Registry::checkEntity(m_hoveredEntityId))
+        m_hoveredEntityId = 0;
+
+    glBindTexture(static_cast<GLenum>(texture.type), 0);
+    m_fbo.release();
 }
 
 priority_type MouseHover::priority()

@@ -228,7 +228,7 @@ namespace legion::audio
             {
                 alSourcef(source.m_sourceId, AL_ROLLOFF_FACTOR, source.m_rolloffFactor);
             }
-            
+
             if (source.m_changes & change::rollOffDistance)
             {
                 alSourcef(source.m_sourceId, AL_REFERENCE_DISTANCE, source.m_referenceDistance);
@@ -306,6 +306,7 @@ namespace legion::audio
 
         if (a.m_sourceId == audio_source::invalid_source_id)
         {
+            log::warn("Invalid source ID, creation canceled");
             handle.destroy();
             return;
         }
@@ -322,8 +323,10 @@ namespace legion::audio
         const audio_source& a = handle.get();
 
         if (a.m_sourceId == audio_source::invalid_source_id)
+        {
+            log::warn("Invalid source ID, destruction canceld");
             return;
-
+        }
         m_sourcePositions.erase(handle);
 
         if (a.m_playState != audio_source::playstate::stopped)
@@ -376,8 +379,7 @@ namespace legion::audio
 
     void AudioSystem::initSource(audio_source& source)
     {
-        static size_type i = 0;
-        if (++i >= monoSources)
+        if (sourceCount + 1 >= monoSources)
         {
             source.m_sourceId = audio_source::invalid_source_id;
             return;
