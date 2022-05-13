@@ -90,44 +90,41 @@ void GameSystem::setup()
             gfx::MaterialCache::create_material("Light", fs::view("assets://shaders/light.shs"));
         }
 
-        player = createEntity("Player");
-        player.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ShipLit"),  gfx::ModelCache::get_handle("Ship") });
-        auto [playerPos, playerRot, playerScal] = player.add_component<transform>();
-        player.add_component<audio::audio_listener>();
-        player.add_component<player_comp>();
-        auto rb = player.add_component<rigidbody>();
+        ship = createEntity("Ship");
+        ship.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ShipLit"),  gfx::ModelCache::get_handle("Ship") });
+        auto [playerPos, playerRot, playerScal] = ship.add_component<transform>();
+        playerPos = position(0.f, 0.f, 10.f);
+        ship.add_component<audio::audio_listener>();
+        ship.add_component<ship_comp>();
+        auto rb = ship.add_component<rigidbody>();
         rb->linearDrag = .2f;
         rb->setMass(.1f);
+
+        auto col = ship.add_component<collider>();
+        col->layer = 4;
+        col->ignoreMask = 4;
+        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
 
         //auto forceField = createEntity();
         //auto [pos, rot, scal] = forceField.add_component<transform>();
         //scal = scale(3.f);
 
         //forceField.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("ForceField"),  gfx::ModelCache::get_handle("Bullet") });
-        //player.add_child(forceField);
+        //ship.add_child(forceField);
 
-        audio::audio_source& audioSource = player.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("BGMusic"));
-        audioSource.setLooping(true);
-        //audioSource.play();
+        //audio::audio_source& audioSource = ship.add_component<audio::audio_source>(audio::AudioSegmentCache::getAudioSegment("BGMusic"));
+        //audioSource.setLooping(true);
+        ////audioSource.play();
 
         camera = createEntity("Camera");
-        camera.add_component<camera_follow>();
-        camera_follow& follow = camera.get_component<camera_follow>();
-        follow.target = player;
-        follow.targetOffset = position(0.f, 0.9f, -8.f);
-        follow.lookAtOffset = position(0.f, 0.9f, 10.f);
-        follow.lagDistance = 1.f;
-        camera.add_component<transform>(follow.targetOffset, rotation::lookat(follow.targetOffset, playerPos->xyz() + follow.lookAtOffset), scale());
+        camera.add_component<transform>(position(0.f, 0.f, 0.f), rotation::lookat(position(0.f, 0.0f, 0.0f), playerPos->xyz() + position(0.f, 0.9f, -8.f)), scale());
+        rigidbody& camrb = camera.add_component<rigidbody>();
+        camrb.linearDrag = .2f;
+        camrb.setMass(.1f);
+
         rendering::camera cam;
         cam.set_projection(60.f, 0.001f, 1000.f);
         camera.add_component<gfx::camera>(cam);
-
-
-        auto col = player.add_component<collider>();
-        col->layer = 4;
-        col->ignoreMask = 4;
-        col->add_shape<SphereCollider>(math::vec3(0.f), math::vec3(1.f), 1.5f);
-
 
         for (size_type i = 0; i < 200; i++)
         {
@@ -182,15 +179,18 @@ void GameSystem::setup()
     {
         for (size_type i = 0; i < 100; i++)
         {
-            spawnEnemy();
+            //spawnEnemy();
         }
     }
 
-    reticle = createEntity("TargetReticle");
-    reticle.add_component<transform>();
-    scale& scal = reticle.get_component<scale>();
-    scal = scale(.5f);
-    reticle.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("TargetReticle"), gfx::ModelCache::get_handle("Particle") });
+    //reticle = createEntity("TargetReticle");
+    //reticle.add_component<transform>();
+    //scale& scal = reticle.get_component<scale>();
+    //scal = scale(.5f);
+    //position& pos = reticle.get_component<position>();
+    //pos = position(0.f, 0.f, 10.f);
+    //reticle.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ gfx::MaterialCache::get_material("TargetReticle"), gfx::ModelCache::get_handle("Particle") });
+    //camera.add_child(reticle);
 
     bindToEvent<collision, &GameSystem::onCollision>();
     timeSinceStart.start();
@@ -200,8 +200,8 @@ void GameSystem::setup()
 
 void GameSystem::fixedUpdate(lgn::time::span deltaTime)
 {
-    if (!player)
-        return;
+    //if (!camera)
+    //    return;
 
     direction = app::InputSystem::getMousePosition() - math::dvec2(.5);
     if (math::abs(direction.x) < .05f)
@@ -209,22 +209,22 @@ void GameSystem::fixedUpdate(lgn::time::span deltaTime)
     if (math::abs(direction.y) < .05f)
         direction.y = 0.f;
 
-    rotation& rot = player.get_component<rotation>();
-    rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, 0.f));
+    rotation& rot = camera.get_component<rotation>();
+    rotation target = rot * (rotation)(math::vec3(direction.y, direction.x, math::length(direction)));
     rot = math::slerp(rot, target, static_cast<float>(deltaTime));
     rot *= math::angleAxis(rollValue * radialMovement, math::vec3::forward);
 
-    rigidbody& rb = player.get_component<rigidbody>();
+    rigidbody& rb = camera.get_component<rigidbody>();
     auto force = rot.right() * strafeValue * linearMovement;
     force += rot.up() * verticalValue * linearMovement;
     force += rot.forward() * thrustValue * linearMovement;
     rb.addForce(force);
 
     shootBuffer += deltaTime;
-    if (player.get_component<player_comp>()->shooting && shootBuffer > shootInterval)
+    if (ship.get_component<ship_comp>()->shooting && shootBuffer > shootInterval)
     {
         shootBuffer = 0.0f;
-        shoot(player);
+        shoot(ship);
     }
 }
 
@@ -255,7 +255,7 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
     imwindow = ImGui::GetCurrentWindow();
     imwindow->FontWindowScale = 2.f;
 
-    ImGui::Text("Health: %f", static_cast<float>(player.get_component<player_comp>()->health));
+    ImGui::Text("Health: %f", static_cast<float>(ship.get_component<ship_comp>()->health));
     ImGui::End();
 
 
@@ -270,31 +270,31 @@ void GameSystem::onGUI(app::window& context, L_MAYBEUNUSED gfx::camera& cam, L_M
         //spawnEnemy();
     }
 
-    targetId = MouseHover::getHoveredEntityId();
-    if (ecs::Registry::checkEntity(targetId))
-    {
-        if (ecs::Registry::getEntity(targetId).has_component<enemy_comp>())
-        {
-            target = ecs::Registry::getEntity(targetId);
-            targeting = true;
-        }
-    }
-    else
-    {
-        targeting = false;
-        position& retPos = reticle.get_component<position>();
-        retPos = camera.get_component<position>();
-        retPos = retPos - position(0.f, 0.f, 1.f);
-    }
+    //targetId = MouseHover::getHoveredEntityId();
+    //if (ecs::Registry::checkEntity(targetId))
+    //{
+    //    if (ecs::Registry::getEntity(targetId).has_component<enemy_comp>())
+    //    {
+    //        target = ecs::Registry::getEntity(targetId);
+    //        targeting = true;
+    //    }
+    //}
+    //else
+    //{
+    //    targeting = false;
+    //    position& retPos = reticle.get_component<position>();
+    //    retPos = camera.get_component<position>();
+    //    retPos = retPos - position(0.f, 0.f, 1.f);
+    //}
 
-    if (target && targeting)
-    {
-        if (target.has_component<enemy_comp>())
-        {
-            position& retPos = reticle.get_component<position>();
-            retPos = target.get_component<position>();
-        }
-    }
+    //if (target && targeting)
+    //{
+    //    if (target.has_component<enemy_comp>())
+    //    {
+    //        position& retPos = reticle.get_component<position>();
+    //        retPos = target.get_component<position>();
+    //    }
+    //}
 
     ecs::filter<particle_emitter> emitterFilter;
     for (auto& ent : emitterFilter)
@@ -347,20 +347,28 @@ void GameSystem::onShoot(player_shoot& action)
 {
     if (escaped)
         return;
-    ecs::filter<position, rotation, scale, player_comp> playerFilter;
+    ecs::filter<position, rotation, scale, ship_comp> playerFilter;
     for (auto& ent : playerFilter)
     {
         if (action.pressed())
-            ent.get_component<player_comp>()->shooting = true;
+            ent.get_component<ship_comp>()->shooting = true;
         else if (action.released())
-            ent.get_component<player_comp>()->shooting = false;
+            ent.get_component<ship_comp>()->shooting = false;
+    }
+}
+void GameSystem::stop_velocity(stop_vel& action)
+{
+    using namespace lgn;
+    if (action.pressed())
+    {
+        camera.get_component<rigidbody>()->velocity = math::vec3::zero;
     }
 }
 
-void GameSystem::shoot(ecs::entity player)
+void GameSystem::shoot(ecs::entity ship)
 {
     using namespace lgn;
-    if (player.get_component<player_comp>()->shooting)
+    if (ship.get_component<ship_comp>()->shooting)
     {
         static size_type i = 0;
         auto bullet = createEntity("Bullet" + std::to_string(i++));
@@ -376,16 +384,16 @@ void GameSystem::shoot(ecs::entity player)
             source.play();
         }
 
-        position playerPos = player.get_component<position>();
-        rotation playerRot = player.get_component<rotation>();
+        position playerPos = ship.get_component<position>();
+        rotation playerRot = ship.get_component<rotation>();
         position& bulletPos = bullet.get_component<position>();
         rotation& bulletRot = bullet.get_component<rotation>();
         scale& bulletScal = bullet.get_component<scale>();
         position targetPos;
-        if (target && targeting)
-            targetPos = target.get_component<position>();
-        else
-            targetPos = (position)(playerPos.xyz() + playerRot.forward());
+        //if (target && targeting)
+        //    targetPos = target.get_component<position>();
+        //else
+        targetPos = (position)(playerPos.xyz() + playerRot.forward());
 
         bulletPos = playerPos.xyz() + playerRot.forward() * .5f;
         bulletRot = rotation::lookat(bulletPos, targetPos, playerRot.up());
@@ -398,7 +406,7 @@ void GameSystem::shoot(ecs::entity player)
         bullet.add_component<gfx::mesh_renderer>(gfx::mesh_renderer{ material, model });
 
         rigidbody& bulletRb = bullet.get_component<rigidbody>();
-        rigidbody playerRb = player.get_component<rigidbody>();
+        rigidbody playerRb = ship.get_component<rigidbody>();
 
         bulletRb.velocity = playerRb.velocity;
         bulletRb.setMass(.1f);
@@ -437,9 +445,9 @@ void GameSystem::onCollision(collision& event)
     {
         bullet_comp& bulletComp = bullet.get_component<bullet_comp>();
 
-        if (other.has_component<player_comp>())
+        if (other.has_component<ship_comp>())
         {
-            player_comp& playerComp = other.get_component<player_comp>();
+            ship_comp& playerComp = other.get_component<ship_comp>();
             //playerComp.health -= bulletComp.damge;
             playerHit = true;
 
@@ -531,12 +539,14 @@ void GameSystem::initInput()
     app::InputSystem::createBinding<player_strafe>(app::inputmap::method::D, 1.f);
     app::InputSystem::createBinding<player_vertical>(app::inputmap::method::LEFT_SHIFT, -1.f);
     app::InputSystem::createBinding<player_vertical>(app::inputmap::method::SPACE, 1.f);
+    app::InputSystem::createBinding<stop_vel>(app::inputmap::method::V);
 
     bindToEvent<player_roll, &GameSystem::roll>();
     bindToEvent<player_strafe, &GameSystem::strafe>();
     bindToEvent<player_vertical, &GameSystem::vertical>();
     bindToEvent<player_thrust, &GameSystem::thrust>();
     bindToEvent<player_shoot, &GameSystem::onShoot>();
+    bindToEvent<stop_vel, &GameSystem::stop_velocity>();
 
     bindToEvent<tonemap_action, &GameSystem::onTonemapSwitch>();
     bindToEvent<auto_exposure_action, &GameSystem::onAutoExposureSwitch>();
@@ -590,7 +600,7 @@ void GameSystem::spawnExplosion(ecs::entity ent)
 void GameSystem::spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel)
 {
     static size_type i = 0;
-    particle_emitter& blastParticleEmitter = player.add_component<particle_emitter>();
+    particle_emitter& blastParticleEmitter = ship.add_component<particle_emitter>();
     blastParticleEmitter.set_spawn_rate(10);
     blastParticleEmitter.set_spawn_interval(0.2f);
     blastParticleEmitter.m_targetTime = 10.f;
@@ -605,7 +615,7 @@ void GameSystem::spawnBlasterBurn(math::vec3 hitPoint, math::vec3 reflectVel)
     material.set_param("intensity", 2.f);
     blastParticleEmitter.add_policy<rendering_policy>(gfx::rendering_policy{ gfx::ModelCache::get_handle("Bullet") , material });
     blastParticleEmitter.add_policy<scale_lifetime_policy>();
-    transform trans = player.get_component<transform>();
+    transform trans = ship.get_component<transform>();
     blastParticleEmitter.add_policy<fountain_policy>(fountain_policy{ (trans.to_world_matrix() * math::vec4(hitPoint,1.f)).xyz(), reflectVel });
 }
 

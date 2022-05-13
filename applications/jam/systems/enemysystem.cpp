@@ -5,10 +5,10 @@
 
 void EnemySystem::setup()
 {
-
+    createProcess<&EnemySystem::fixedUpdate>("Update", 0.02f);
 }
 
-void EnemySystem::update(lgn::time::span dt)
+void EnemySystem::fixedUpdate(lgn::time::span dt)
 {
     locomotion(dt);
     alignment();
@@ -22,10 +22,10 @@ void EnemySystem::locomotion(float deltaTime)
 
     for (auto& ent : enemies)
     {
-        auto& enemy = ent.get_component<enemy_comp>().get();
-        auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<rigidbody>().get();
-        auto& rot = ent.get_component<rotation>().get();
+        enemy_comp& enemy = ent.get_component<enemy_comp>();
+        position& pos = ent.get_component<position>();
+        rigidbody& rb = ent.get_component<rigidbody>();
+        rotation& rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
         auto& steering = enemy.direction;
@@ -73,8 +73,8 @@ void EnemySystem::locomotion(float deltaTime)
         {
             if (ent2 == ent)
                 continue;
-
-            if (math::length2(ent2.get_component<position>().get() - pos) < enemy.visionRadius * enemy.visionRadius)
+            position pos2 = ent2.get_component<position>();
+            if (math::length2(pos2 - pos) < enemy.visionRadius * enemy.visionRadius)
             {
                 enemy.neighbors.push_back(ent2->id);
             }
@@ -85,10 +85,10 @@ void EnemySystem::alignment()
 {
     for (auto& ent : enemies)
     {
-        auto& enemy = ent.get_component<enemy_comp>().get();
-        auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<rigidbody>().get();
-        auto rot = ent.get_component<rotation>();
+        enemy_comp& enemy = ent.get_component<enemy_comp>();
+        position& pos = ent.get_component<position>();
+        rigidbody& rb = ent.get_component<rigidbody>();
+        rotation& rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
         auto& steering = enemy.direction;
@@ -109,10 +109,10 @@ void EnemySystem::cohesion()
 {
     for (auto& ent : enemies)
     {
-        auto& enemy = ent.get_component<enemy_comp>().get();
-        auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<rigidbody>().get();
-        auto rot = ent.get_component<rotation>();
+        enemy_comp& enemy = ent.get_component<enemy_comp>();
+        position& pos = ent.get_component<position>();
+        rigidbody& rb = ent.get_component<rigidbody>();
+        rotation& rot = ent.get_component<rotation>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
         auto& steering = enemy.direction;
@@ -133,10 +133,9 @@ void EnemySystem::seperation()
 {
     for (auto& ent : enemies)
     {
-        auto& enemy = ent.get_component<enemy_comp>().get();
-        auto& pos = ent.get_component<position>().get();
-        auto& rb = ent.get_component<rigidbody>().get();
-        auto rot = ent.get_component<rotation>();
+        enemy_comp& enemy = ent.get_component<enemy_comp>();
+        position& pos = ent.get_component<position>();
+        rigidbody& rb = ent.get_component<rigidbody>();
         auto& vel = rb.velocity;
         auto& speed = enemy.speed;
         auto& steering = enemy.direction;
@@ -158,9 +157,9 @@ void EnemySystem::seperation()
 }
 void EnemySystem::hunt(float deltaTime)
 {
-    for (auto& player : players)
+    for (auto& ship : ships)
     {
-        position& playerPos = player.get_component<position>();
+        position& playerPos = ship.get_component<position>();
         bnds.set_origin(playerPos);
 
         for (auto& enemy : enemies)
@@ -188,8 +187,8 @@ void EnemySystem::hunt(float deltaTime)
                 if (180.f - math::rad2deg(math::angleBetween(enemy.get_component<rotation>()->forward(), math::normalize(diff))) < 15.f)
                     if (enemy_c.elapsedTime > enemy_c.shootInterval)
                     {
-                        shoot(enemy);
                         enemy_c.elapsedTime = 0.f;
+                        shoot(enemy);
                     }
             }
             else if (enemy_c.running)
@@ -223,7 +222,7 @@ void EnemySystem::shoot(ecs::entity enemy)
     scale& bulletScal = bullet.get_component<scale>();
     bulletPos = enemyPos.xyz() + enemyRot.forward() * .5f;
     bulletRot = enemyRot;
-    bulletScal = scale(.3f, .3f, 1.5f);
+    bulletScal = scale(.2f, .2f, 1.5f);
 
     auto model = gfx::ModelCache::get_handle("Bullet");
     auto material = gfx::MaterialCache::get_material("Light");

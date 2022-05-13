@@ -134,6 +134,7 @@
     <ClCompile Include="systems\gamesystem.cpp" />
     <ClCompile Include="systems\gui_test.cpp" />
     <ClCompile Include="systems\physicssystem.cpp" />
+    <ClCompile Include="systems\shipsystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autogen\autogen.hpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="systems\gamesystem.hpp" />
     <ClInclude Include="systems\gui_test.hpp" />
     <ClInclude Include="systems\physicssystem.hpp" />
+    <ClInclude Include="systems\shipsystem.hpp" />
     <ClInclude Include="systems\pointcloud_particlesystem.hpp" />
     <ClInclude Include="data\pp_blur.hpp" />
   </ItemGroup>

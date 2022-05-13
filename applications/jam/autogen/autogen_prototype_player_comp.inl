@@ -4,11 +4,11 @@ namespace legion { using namespace core; }
 namespace legion::core
 {
     template<>
-    L_NODISCARD prototype make_prototype<::player_comp>(const ::player_comp& obj)
+    L_NODISCARD prototype make_prototype<::ship_comp>(const ::ship_comp& obj)
     {
         prototype prot;
-        prot.typeId = typeHash<::player_comp>();
-        prot.typeName = "player_comp";
+        prot.typeId = typeHash<::ship_comp>();
+        prot.typeName = "ship_comp";
         return prot;
     }
 }

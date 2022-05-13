@@ -24,6 +24,8 @@ struct player_shoot : public lgn::app::input_action<player_shoot> {};
 struct player_strafe : public lgn::app::input_axis<player_strafe> {};
 struct player_vertical : public lgn::app::input_axis<player_vertical> {};
 
+struct stop_vel : public lgn::app::input_action<stop_vel> {};
+
 struct exit_action : public lgn::app::input_action<exit_action> {};
 struct restart_action : public lgn::app::input_action<restart_action> {};
 
@@ -35,7 +37,7 @@ class GameSystem final : public legion::System<GameSystem>
 {
 public:
     lgn::ecs::entity camera;
-    lgn::ecs::entity player;
+    lgn::ecs::entity ship;
     lgn::ecs::entity reticle;
     lgn::ecs::entity target;
     id_type targetId;
@@ -67,7 +69,9 @@ public:
     void vertical(player_vertical& axis);
     void thrust(player_thrust& axis);
     void onShoot(player_shoot& action);
-    void shoot(ecs::entity player);
+    void shoot(ecs::entity ship);
+
+    void stop_velocity(stop_vel& action);
 
     void onCollision(collision& event);
     void initInput();

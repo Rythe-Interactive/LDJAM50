@@ -30,7 +30,7 @@ void BulletSystem::update(lgn::time::span deltaTime)
         rotation& rot = ent.get_component<rotation>();
         rb.addForce(rot.forward() * 100.f);
 
-        scale& scal = ent.get_component<scale>();
+        //scale& scal = ent.get_component<scale>();
         //scal = scal * (1.f - (bullet.age / bullet.lifetime));
         //scal = math::clamp(scal, math::vec3(0.01f), math::vec3(5.f));
     }

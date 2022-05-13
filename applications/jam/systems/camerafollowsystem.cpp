@@ -34,14 +34,14 @@ void CameraFollowSystem::fixedUpdate(lgn::time::span deltaTime)
         if (!follow.target)
             continue;
 
-        ecs::entity player = follow.target;
-        position playerPos = player.get_component<position>();
-        rigidbody playerRb = player.get_component<rigidbody>();
-        transform playerTrans = player.get_component<transform>();
+        ecs::entity ship = follow.target;
+        position playerPos = ship.get_component<position>();
+        rigidbody playerRb = ship.get_component<rigidbody>();
+        transform playerTrans = ship.get_component<transform>();
         transform cameraTrans = camera.get_component<transform>();
         position& cameraPos = camera.get_component<position>();
         rotation& cameraRot = camera.get_component<rotation>();
-        rotation& playerRot = player.get_component<rotation>();
+        rotation& playerRot = ship.get_component<rotation>();
 
         auto targetRot = rotation::lookat(cameraPos, playerTrans.to_world_matrix() * math::vec4(follow.lookAtOffset, 1.f), playerRot.up());
         cameraRot = math::slerp(cameraRot, targetRot, static_cast<float>(deltaTime) * 7.f);

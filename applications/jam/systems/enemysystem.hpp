@@ -8,12 +8,12 @@ using namespace lgn;
 class EnemySystem final : public legion::System<EnemySystem>
 {
     ecs::filter<position, rotation, scale, rigidbody, enemy_comp> enemies;
-    ecs::filter<position, rotation, scale, rigidbody, player_comp> players;
+    ecs::filter<position, rotation, scale, rigidbody, ship_comp> ships;
     bounding_box bnds{ math::vec3(-500.f), math::vec3(500.f)};
     float border = 5.f;
 public:
     void setup();
-    void update(lgn::time::span);
+    void fixedUpdate(lgn::time::span);
     void shutdown()
     {
         lgn::log::debug("EnemySystem shutdown");
